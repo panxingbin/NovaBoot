@@ -4,6 +4,7 @@ import cn.dev33.satoken.stp.StpUtil;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.novaboot.common.exception.BusinessException;
 import com.novaboot.framework.captcha.CaptchaService;
+import com.novaboot.framework.util.ServletUtils;
 import com.novaboot.module.system.dto.LoginBody;
 import com.novaboot.module.system.dto.LoginVO;
 import com.novaboot.module.system.dto.UserProfileVO;
@@ -23,22 +24,34 @@ public class AuthService {
     private final CaptchaService captchaService;
     private final SysUserMapper sysUserMapper;
     private final PasswordEncoder passwordEncoder;
+    private final LoginLogService loginLogService;
+    private final OnlineUserRegistry onlineUserRegistry;
 
     public LoginVO login(LoginBody body) {
-        captchaService.verify(body.getCaptchaId(), body.getCaptchaCode());
-        SysUser user = sysUserMapper.selectOne(
-                Wrappers.<SysUser>lambdaQuery().eq(SysUser::getUsername, body.getUsername()));
-        if (user == null || !passwordEncoder.matches(body.getPassword(), user.getPassword())) {
-            throw new BusinessException("用戶名或密碼錯誤");
+        String ip = ServletUtils.getIp();
+        try {
+            captchaService.verify(body.getCaptchaId(), body.getCaptchaCode());
+            SysUser user = sysUserMapper.selectOne(
+                    Wrappers.<SysUser>lambdaQuery().eq(SysUser::getUsername, body.getUsername()));
+            if (user == null || !passwordEncoder.matches(body.getPassword(), user.getPassword())) {
+                throw new BusinessException("用戶名或密碼錯誤");
+            }
+            if (user.getStatus() == null || user.getStatus() != 1) {
+                throw new BusinessException("賬號已停用，請聯繫管理員");
+            }
+            StpUtil.login(user.getId());
+            loginLogService.record(body.getUsername(), ip, 0, "登入成功");
+            String token = StpUtil.getTokenValue();
+            onlineUserRegistry.register(token, user.getId());
+            return new LoginVO(token);
+        } catch (BusinessException e) {
+            loginLogService.record(body.getUsername(), ip, 1, e.getMessage());
+            throw e;
         }
-        if (user.getStatus() == null || user.getStatus() != 1) {
-            throw new BusinessException("賬號已停用，請聯繫管理員");
-        }
-        StpUtil.login(user.getId());
-        return new LoginVO(StpUtil.getTokenValue());
     }
 
     public void logout() {
+        onlineUserRegistry.remove(StpUtil.getTokenValue());
         StpUtil.logout();
     }
 

@@ -20,6 +20,9 @@ public class RoleVO {
 
     private Integer status;
 
+    /** 數據範圍：1全部 2自訂部門 3本部門 4本部門及以下 5僅本人 */
+    private Integer dataScope;
+
     private String remark;
 
     private LocalDateTime createdAt;

@@ -8,8 +8,10 @@ import com.novaboot.module.system.dto.RoleBody;
 import com.novaboot.module.system.dto.RoleQuery;
 import com.novaboot.module.system.dto.RoleVO;
 import com.novaboot.module.system.entity.SysRole;
+import com.novaboot.module.system.entity.SysRoleDept;
 import com.novaboot.module.system.entity.SysRoleMenu;
 import com.novaboot.module.system.entity.SysUserRole;
+import com.novaboot.module.system.mapper.SysRoleDeptMapper;
 import com.novaboot.module.system.mapper.SysRoleMapper;
 import com.novaboot.module.system.mapper.SysRoleMenuMapper;
 import com.novaboot.module.system.mapper.SysUserRoleMapper;
@@ -30,6 +32,7 @@ public class SysRoleService {
     private final SysRoleMapper sysRoleMapper;
     private final SysRoleMenuMapper sysRoleMenuMapper;
     private final SysUserRoleMapper sysUserRoleMapper;
+    private final SysRoleDeptMapper sysRoleDeptMapper;
 
     public PageResult<RoleVO> page(RoleQuery query) {
         Page<SysRole> page = sysRoleMapper.selectPage(
@@ -47,11 +50,7 @@ public class SysRoleService {
     public void create(RoleBody body) {
         checkCodeUnique(body.getCode(), null);
         SysRole role = new SysRole();
-        role.setName(body.getName());
-        role.setCode(body.getCode());
-        role.setSortNo(body.getSortNo() == null ? 0 : body.getSortNo());
-        role.setStatus(body.getStatus());
-        role.setRemark(body.getRemark());
+        copyBody(role, body);
         sysRoleMapper.insert(role);
     }
 
@@ -65,11 +64,7 @@ public class SysRoleService {
         if (id == 1L && !"admin".equals(body.getCode())) {
             throw new BusinessException("內置管理員角色編碼不允許修改");
         }
-        role.setName(body.getName());
-        role.setCode(body.getCode());
-        role.setSortNo(body.getSortNo() == null ? 0 : body.getSortNo());
-        role.setStatus(body.getStatus());
-        role.setRemark(body.getRemark());
+        copyBody(role, body);
         sysRoleMapper.updateById(role);
     }
 
@@ -81,12 +76,19 @@ public class SysRoleService {
         sysRoleMapper.deleteById(id);
         sysRoleMenuMapper.delete(Wrappers.<SysRoleMenu>lambdaQuery().eq(SysRoleMenu::getRoleId, id));
         sysUserRoleMapper.delete(Wrappers.<SysUserRole>lambdaQuery().eq(SysUserRole::getRoleId, id));
+        sysRoleDeptMapper.delete(Wrappers.<SysRoleDept>lambdaQuery().eq(SysRoleDept::getRoleId, id));
     }
 
     public List<Long> getMenuIds(Long roleId) {
         return sysRoleMenuMapper.selectList(
                         Wrappers.<SysRoleMenu>lambdaQuery().eq(SysRoleMenu::getRoleId, roleId))
                 .stream().map(SysRoleMenu::getMenuId).toList();
+    }
+
+    public List<Long> getDeptIds(Long roleId) {
+        return sysRoleDeptMapper.selectList(
+                        Wrappers.<SysRoleDept>lambdaQuery().eq(SysRoleDept::getRoleId, roleId))
+                .stream().map(SysRoleDept::getDeptId).toList();
     }
 
     @Transactional
@@ -107,6 +109,24 @@ public class SysRoleService {
         }
     }
 
+    @Transactional
+    public void assignDepts(Long roleId, List<Long> deptIds) {
+        SysRole role = sysRoleMapper.selectById(roleId);
+        if (role == null) {
+            throw new BusinessException("角色不存在");
+        }
+        sysRoleDeptMapper.delete(Wrappers.<SysRoleDept>lambdaQuery().eq(SysRoleDept::getRoleId, roleId));
+        if (deptIds == null || deptIds.isEmpty()) {
+            return;
+        }
+        for (Long deptId : deptIds) {
+            SysRoleDept roleDept = new SysRoleDept();
+            roleDept.setRoleId(roleId);
+            roleDept.setDeptId(deptId);
+            sysRoleDeptMapper.insert(roleDept);
+        }
+    }
+
     private void checkCodeUnique(String code, Long excludeId) {
         Long count = sysRoleMapper.selectCount(
                 Wrappers.<SysRole>lambdaQuery()
@@ -117,6 +137,15 @@ public class SysRoleService {
         }
     }
 
+    private void copyBody(SysRole role, RoleBody body) {
+        role.setName(body.getName());
+        role.setCode(body.getCode());
+        role.setSortNo(body.getSortNo() == null ? 0 : body.getSortNo());
+        role.setStatus(body.getStatus());
+        role.setDataScope(body.getDataScope() == null ? 1 : body.getDataScope());
+        role.setRemark(body.getRemark());
+    }
+
     private RoleVO toVO(SysRole role) {
         RoleVO vo = new RoleVO();
         vo.setId(role.getId());
@@ -124,6 +153,7 @@ public class SysRoleService {
         vo.setCode(role.getCode());
         vo.setSortNo(role.getSortNo());
         vo.setStatus(role.getStatus());
+        vo.setDataScope(role.getDataScope());
         vo.setRemark(role.getRemark());
         vo.setCreatedAt(role.getCreatedAt());
         return vo;

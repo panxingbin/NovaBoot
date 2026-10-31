@@ -5,14 +5,14 @@ import { Plus, Refresh, Search } from '@element-plus/icons-vue'
 import { createMenu, deleteMenu, listMenus, updateMenu } from '@/api/system'
 import type { MenuSaveBody } from '@/api/system'
 import type { MenuType, MenuVO } from '@/api/types'
-import { buildMenuTree } from '@/utils/menu'
+import { buildTree } from '@/utils/menu'
 import { getIcon } from '@/utils/icons'
 
 const loading = ref(false)
 const flatList = ref<MenuVO[]>([])
 const keyword = ref('')
 
-const menuTree = computed(() => buildMenuTree(flatList.value))
+const menuTree = computed(() => buildTree(flatList.value))
 
 const menuTypeMeta: Record<MenuType, { label: string; tag: 'primary' | 'success' | 'info' }> = {
   D: { label: '目錄', tag: 'primary' },

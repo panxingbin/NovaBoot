@@ -7,6 +7,10 @@ spring:
   profiles:
     # 默認 local（H2 內存庫，零依賴啟動）；生產切 mysql：--spring.profiles.active=mysql
     active: ${SPRING_PROFILES_ACTIVE:local}
+  servlet:
+    multipart:
+      max-file-size: 20MB
+      max-request-size: 20MB
 
 mybatis-plus:
   configuration:
@@ -28,6 +32,8 @@ sa-token:
   is-share: true
   token-style: uuid
   is-log: false
+  # 內存 DAO 的搜索（如在線用戶列表）依賴定時刷新，開發環境縮短為 5s；Redis 環境實時不受影響
+  data-refresh-period: 5
 
 springdoc:
   swagger-ui:
@@ -38,3 +44,6 @@ nova:
     enabled: true
   init:
     admin-password: admin123
+  storage:
+    # 檔案本地存儲根目錄（相對應用工作目錄）
+    local-path: ./data/files

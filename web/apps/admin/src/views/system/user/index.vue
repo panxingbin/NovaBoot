@@ -6,18 +6,25 @@ import { Plus, Refresh, Search } from '@element-plus/icons-vue'
 import {
   createUser,
   deleteUser,
+  getDeptTree,
+  listAllPosts,
   pageRoles,
   pageUsers,
   updateUser,
   updateUserPassword,
 } from '@/api/system'
-import type { RoleVO, UserVO } from '@/api/types'
+import type { DeptVO, PostVO, RoleVO, UserVO } from '@/api/types'
 import { formatDateTime } from '@/utils/format'
 
 const loading = ref(false)
 const total = ref(0)
 const records = ref<UserVO[]>([])
-const query = reactive({ pageNum: 1, pageSize: 10, keyword: '' })
+const query = reactive({
+  pageNum: 1,
+  pageSize: 10,
+  keyword: '',
+  deptId: undefined as number | undefined,
+})
 
 async function fetchList(): Promise<void> {
   loading.value = true
@@ -27,6 +34,7 @@ async function fetchList(): Promise<void> {
       pageNum: query.pageNum,
       pageSize: query.pageSize,
       keyword: keyword || undefined,
+      deptId: query.deptId,
     })
     records.value = data.records
     total.value = data.total
@@ -42,6 +50,7 @@ function handleSearch(): void {
 
 function handleReset(): void {
   query.keyword = ''
+  query.deptId = undefined
   handleSearch()
 }
 
@@ -68,6 +77,7 @@ const form = reactive({
   status: 1,
   remark: '',
   roleIds: [] as number[],
+  postIds: [] as number[],
 })
 
 const rules = computed<FormRules>(() => ({
@@ -79,6 +89,31 @@ const rules = computed<FormRules>(() => ({
 async function fetchRoleOptions(): Promise<void> {
   const data = await pageRoles({ pageNum: 1, pageSize: 100 })
   roleOptions.value = data.records
+}
+
+const deptTreeData = ref<DeptVO[]>([])
+const postOptions = ref<PostVO[]>([])
+
+async function fetchDeptTree(): Promise<void> {
+  try {
+    deptTreeData.value = await getDeptTree()
+  } catch {
+    // 錯誤提示由 http 層統一彈出
+  }
+}
+
+async function fetchPostOptions(): Promise<void> {
+  try {
+    postOptions.value = await listAllPosts()
+  } catch {
+    // 錯誤提示由 http 層統一彈出
+  }
+}
+
+function handleDeptQueryChange(value: unknown): void {
+  query.deptId = typeof value === 'number' ? value : undefined
+  query.pageNum = 1
+  void fetchList()
 }
 
 function openCreate(): void {
@@ -94,6 +129,7 @@ function openCreate(): void {
     status: 1,
     remark: '',
     roleIds: [],
+    postIds: [],
   })
   dialogVisible.value = true
 }
@@ -111,6 +147,7 @@ function openEdit(row: UserVO): void {
     status: row.status,
     remark: row.remark ?? '',
     roleIds: [...row.roleIds],
+    postIds: [...row.postIds],
   })
   dialogVisible.value = true
 }
@@ -129,6 +166,7 @@ async function handleSubmit(): Promise<void> {
     status: form.status,
     remark: form.remark || undefined,
     roleIds: form.roleIds,
+    postIds: form.postIds,
   }
   if (isEdit.value) {
     await updateUser(editingId.value, payload)
@@ -154,6 +192,7 @@ async function handleStatusChange(row: UserVO): Promise<void> {
       status: row.status,
       remark: row.remark ?? undefined,
       roleIds: row.roleIds,
+      postIds: row.postIds,
     })
     ElMessage.success(row.status === 1 ? '已啟用' : '已停用')
   } catch {
@@ -214,6 +253,8 @@ async function handleDelete(row: UserVO): Promise<void> {
 onMounted(() => {
   void fetchList()
   void fetchRoleOptions()
+  void fetchDeptTree()
+  void fetchPostOptions()
 })
 </script>
 
@@ -227,6 +268,19 @@ onMounted(() => {
         clearable
         @keyup.enter="handleSearch"
         @clear="handleSearch"
+      />
+      <el-tree-select
+        v-model="query.deptId"
+        class="dept-select"
+        :data="deptTreeData"
+        :props="{ label: 'name', children: 'children' }"
+        node-key="id"
+        check-strictly
+        clearable
+        default-expand-all
+        :render-after-expand="false"
+        placeholder="部門"
+        @change="handleDeptQueryChange"
       />
       <el-button type="primary" :icon="Search" @click="handleSearch">搜索</el-button>
       <el-button :icon="Refresh" @click="handleReset">重置</el-button>
@@ -317,6 +371,25 @@ onMounted(() => {
         <el-form-item label="手機" prop="phone">
           <el-input v-model="form.phone" placeholder="請輸入手機號" />
         </el-form-item>
+        <el-form-item label="所屬部門" prop="deptId">
+          <el-tree-select
+            v-model="form.deptId"
+            class="w-full"
+            :data="deptTreeData"
+            :props="{ label: 'name', children: 'children' }"
+            node-key="id"
+            check-strictly
+            clearable
+            default-expand-all
+            :render-after-expand="false"
+            placeholder="請選擇所屬部門"
+          />
+        </el-form-item>
+        <el-form-item label="崗位" prop="postIds">
+          <el-select v-model="form.postIds" class="w-full" multiple placeholder="請選擇崗位">
+            <el-option v-for="post in postOptions" :key="post.id" :label="post.name" :value="post.id" />
+          </el-select>
+        </el-form-item>
         <el-form-item label="狀態" prop="status">
           <el-switch v-model="form.status" :active-value="1" :inactive-value="0" />
         </el-form-item>
@@ -368,6 +441,9 @@ onMounted(() => {
 }
 .search-input {
   width: 240px;
+}
+.dept-select {
+  width: 200px;
 }
 .pager {
   display: flex;

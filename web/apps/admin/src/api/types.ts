@@ -66,6 +66,7 @@ export interface UserVO {
   status: number
   remark: string | null
   roleIds: number[]
+  postIds: number[]
   createdAt: string
 }
 
@@ -75,6 +76,108 @@ export interface RoleVO {
   code: string
   sortNo: number
   status: number
+  dataScope: number
   remark: string | null
   createdAt: string
+}
+
+export interface DeptVO {
+  id: number
+  parentId: number
+  name: string
+  sortNo: number
+  leader: string | null
+  phone: string | null
+  status: number
+  createdAt: string
+  children?: DeptVO[]
+}
+
+export interface PostVO {
+  id: number
+  code: string
+  name: string
+  sortNo: number
+  status: number
+  remark: string | null
+  createdAt: string
+}
+
+export interface DictTypeVO {
+  id: number
+  name: string
+  type: string
+  remark: string | null
+  createdAt: string
+}
+
+export interface DictDataVO {
+  id: number
+  dictType: string
+  label: string
+  value: string
+  sortNo: number
+  status: number
+  remark: string | null
+}
+
+export interface ConfigVO {
+  id: number
+  name: string
+  key: string
+  value: string
+  builtin: number
+  remark: string | null
+}
+
+export interface NoticeVO {
+  id: number
+  title: string
+  type: number
+  content: string
+  status: number
+  remark: string | null
+  createdAt: string
+}
+
+export interface FileVO {
+  id: number
+  name: string
+  originalName: string
+  size: number
+  contentType: string | null
+  createdAt: string
+}
+
+export interface OperLogVO {
+  id: number
+  title: string
+  businessType: number
+  method: string
+  requestMethod: string
+  url: string
+  ip: string
+  param: string
+  errorMsg: string
+  status: number
+  costMs: number
+  operName: string
+  createdAt: string
+}
+
+export interface LoginLogVO {
+  id: number
+  username: string
+  ip: string
+  status: number
+  msg: string
+  createdAt: string
+}
+
+export interface OnlineUserVO {
+  token: string
+  username: string
+  nickname: string
+  device: string
+  loginTime: string
 }

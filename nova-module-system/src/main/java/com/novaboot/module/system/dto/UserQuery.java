@@ -12,4 +12,6 @@ import lombok.EqualsAndHashCode;
 public class UserQuery extends PageQuery {
 
     private String keyword;
+
+    private Long deptId;
 }

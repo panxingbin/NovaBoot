@@ -29,5 +29,7 @@ public class UserVO {
 
     private List<Long> roleIds;
 
+    private List<Long> postIds;
+
     private LocalDateTime createdAt;
 }

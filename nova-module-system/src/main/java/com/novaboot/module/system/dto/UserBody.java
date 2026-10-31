@@ -33,4 +33,6 @@ public class UserBody {
     private String remark;
 
     private List<Long> roleIds;
+
+    private List<Long> postIds;
 }

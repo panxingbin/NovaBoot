@@ -1,20 +1,31 @@
 <script setup lang="ts">
-import { nextTick, onMounted, reactive, ref } from 'vue'
+import { nextTick, onMounted, reactive, ref, watch } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import type { FormInstance, FormRules, TreeInstance } from 'element-plus'
 import { Plus, Refresh, Search } from '@element-plus/icons-vue'
 import {
+  assignRoleDepts,
   assignRoleMenus,
   createRole,
   deleteRole,
+  getDeptTree,
+  getRoleDeptIds,
   getRoleMenuIds,
   getMenuTree,
   pageRoles,
   updateRole,
 } from '@/api/system'
-import type { MenuTreeNode, RoleVO } from '@/api/types'
+import type { DeptVO, MenuTreeNode, RoleVO } from '@/api/types'
 import { collectLeafIds } from '@/utils/menu'
 import { formatDateTime } from '@/utils/format'
+
+const dataScopeOptions = [
+  { value: 1, label: '全部' },
+  { value: 2, label: '自訂部門' },
+  { value: 3, label: '本部門' },
+  { value: 4, label: '本部門及以下' },
+  { value: 5, label: '僅本人' },
+]
 
 const loading = ref(false)
 const total = ref(0)
@@ -64,6 +75,7 @@ const form = reactive({
   code: '',
   sortNo: 0,
   status: 1,
+  dataScope: 1,
   remark: '',
 })
 
@@ -75,11 +87,13 @@ const rules: FormRules = {
 function openCreate(): void {
   isEdit.value = false
   editingId.value = 0
-  Object.assign(form, { name: '', code: '', sortNo: 0, status: 1, remark: '' })
+  Object.assign(form, { name: '', code: '', sortNo: 0, status: 1, dataScope: 1, remark: '' })
+  pendingDeptEcho.value = null
+  void fetchDeptTree()
   dialogVisible.value = true
 }
 
-function openEdit(row: RoleVO): void {
+async function openEdit(row: RoleVO): Promise<void> {
   isEdit.value = true
   editingId.value = row.id
   Object.assign(form, {
@@ -87,9 +101,25 @@ function openEdit(row: RoleVO): void {
     code: row.code,
     sortNo: row.sortNo,
     status: row.status,
+    dataScope: row.dataScope,
     remark: row.remark ?? '',
   })
   dialogVisible.value = true
+  try {
+    const [tree, deptIds] = await Promise.all([getDeptTree(), getRoleDeptIds(row.id)])
+    deptTreeData.value = tree
+    const leafIds = collectLeafIds(tree)
+    const checkedLeafIds = deptIds.filter((id) => leafIds.has(id))
+    if (form.dataScope === 2) {
+      await nextTick()
+      deptTreeRef.value?.setCheckedKeys(checkedLeafIds)
+      pendingDeptEcho.value = null
+    } else {
+      pendingDeptEcho.value = checkedLeafIds
+    }
+  } catch {
+    // 部門回顯失敗不阻塞編輯，錯誤提示由 http 層統一彈出
+  }
 }
 
 async function handleSubmit(): Promise<void> {
@@ -103,13 +133,24 @@ async function handleSubmit(): Promise<void> {
     code: form.code.trim(),
     sortNo: Number.isFinite(form.sortNo) ? form.sortNo : 0,
     status: form.status,
+    dataScope: form.dataScope,
     remark: form.remark || undefined,
   }
   if (isEdit.value) {
     await updateRole(editingId.value, payload)
+    if (payload.dataScope === 2) {
+      await assignRoleDepts(editingId.value, collectDeptIds())
+    }
     ElMessage.success('修改成功')
   } else {
-    await createRole(payload)
+    const newId = await createRole(payload)
+    if (payload.dataScope === 2) {
+      if (typeof newId === 'number') {
+        await assignRoleDepts(newId, collectDeptIds())
+      } else {
+        ElMessage.warning('新增成功；自訂部門範圍請通過「修改」設置具體部門')
+      }
+    }
     ElMessage.success('新增成功')
   }
   dialogVisible.value = false
@@ -126,12 +167,47 @@ async function handleStatusChange(row: RoleVO): Promise<void> {
       code: row.code,
       sortNo: row.sortNo,
       status: row.status,
+      dataScope: row.dataScope,
       remark: row.remark ?? undefined,
     })
     ElMessage.success(row.status === 1 ? '已啟用' : '已停用')
   } catch {
     row.status = original
   }
+}
+
+// ---------- 自訂部門 ----------
+
+const deptTreeRef = ref<TreeInstance>()
+const deptTreeData = ref<DeptVO[]>([])
+const pendingDeptEcho = ref<number[] | null>(null)
+
+async function fetchDeptTree(): Promise<void> {
+  try {
+    deptTreeData.value = await getDeptTree()
+  } catch {
+    // 錯誤提示由 http 層統一彈出
+  }
+}
+
+watch(
+  () => form.dataScope,
+  async (val) => {
+    if (val === 2 && pendingDeptEcho.value) {
+      const ids = pendingDeptEcho.value
+      pendingDeptEcho.value = null
+      await nextTick()
+      deptTreeRef.value?.setCheckedKeys(ids)
+    }
+  },
+)
+
+function collectDeptIds(): number[] {
+  const tree = deptTreeRef.value
+  if (!tree) {
+    return []
+  }
+  return [...(tree.getCheckedKeys() as number[]), ...(tree.getHalfCheckedKeys() as number[])]
 }
 
 // ---------- 分配菜單權限 ----------
@@ -291,6 +367,28 @@ onMounted(() => {
         </el-form-item>
         <el-form-item label="狀態" prop="status">
           <el-switch v-model="form.status" :active-value="1" :inactive-value="0" />
+        </el-form-item>
+        <el-form-item label="數據範圍">
+          <el-select v-model="form.dataScope" class="w-full">
+            <el-option
+              v-for="opt in dataScopeOptions"
+              :key="opt.value"
+              :label="opt.label"
+              :value="opt.value"
+            />
+          </el-select>
+        </el-form-item>
+        <el-form-item v-if="form.dataScope === 2" label="自訂部門">
+          <div class="menu-tree-box dept-tree-box">
+            <el-tree
+              ref="deptTreeRef"
+              :data="deptTreeData"
+              node-key="id"
+              show-checkbox
+              default-expand-all
+              :props="{ label: 'name', children: 'children' }"
+            />
+          </div>
         </el-form-item>
         <el-form-item label="備註" prop="remark">
           <el-input v-model="form.remark" type="textarea" :rows="2" placeholder="請輸入備註" />

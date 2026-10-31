@@ -1,4 +1,4 @@
-import type { MenuTreeNode, MenuVO } from '@/api/types'
+import type { MenuTreeNode } from '@/api/types'
 
 export function filterVisibleMenus(nodes: MenuTreeNode[]): MenuTreeNode[] {
   const result: MenuTreeNode[] = []
@@ -18,7 +18,12 @@ export function filterVisibleMenus(nodes: MenuTreeNode[]): MenuTreeNode[] {
   return result
 }
 
-export function collectLeafIds(nodes: MenuTreeNode[], acc: Set<number> = new Set()): Set<number> {
+interface IdNode {
+  id: number
+  children?: IdNode[]
+}
+
+export function collectLeafIds(nodes: IdNode[], acc: Set<number> = new Set()): Set<number> {
   for (const node of nodes) {
     if (node.children && node.children.length > 0) {
       collectLeafIds(node.children, acc)
@@ -29,12 +34,16 @@ export function collectLeafIds(nodes: MenuTreeNode[], acc: Set<number> = new Set
   return acc
 }
 
-export function buildMenuTree(list: MenuVO[]): MenuTreeNode[] {
-  const nodeMap = new Map<number, MenuTreeNode>()
+export type TreeOf<T> = T & { children: TreeOf<T>[] }
+
+export function buildTree<T extends { id: number; parentId: number; sortNo: number }>(
+  list: T[],
+): TreeOf<T>[] {
+  const nodeMap = new Map<number, TreeOf<T>>()
   for (const item of list) {
     nodeMap.set(item.id, { ...item, children: [] })
   }
-  const roots: MenuTreeNode[] = []
+  const roots: TreeOf<T>[] = []
   for (const item of list) {
     const node = nodeMap.get(item.id)
     if (!node) {
@@ -47,7 +56,7 @@ export function buildMenuTree(list: MenuVO[]): MenuTreeNode[] {
       roots.push(node)
     }
   }
-  const sortNodes = (nodes: MenuTreeNode[]): void => {
+  const sortNodes = (nodes: TreeOf<T>[]): void => {
     nodes.sort((a, b) => a.sortNo - b.sortNo)
     for (const node of nodes) {
       sortNodes(node.children)
