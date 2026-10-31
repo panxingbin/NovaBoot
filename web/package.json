@@ -1,0 +1,9 @@
+{
+  "name": "nova-boot-web",
+  "private": true,
+  "version": "0.1.0",
+  "scripts": {
+    "dev": "pnpm --filter admin dev",
+    "build": "pnpm --filter admin build"
+  }
+}

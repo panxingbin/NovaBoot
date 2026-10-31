@@ -1,0 +1,17 @@
+spring:
+  datasource:
+    driver-class-name: org.h2.Driver
+    url: jdbc:h2:mem:nova;MODE=MySQL;DB_CLOSE_DELAY=-1;DATABASE_TO_LOWER=TRUE;CASE_INSENSITIVE_IDENTIFIERS=TRUE
+    username: sa
+    password: ""
+  flyway:
+    locations: classpath:db/migration/h2
+
+logging:
+  level:
+    com.novaboot: debug
+
+nova:
+  # 本地無 Redis/行為驗證碼服務時，M0 先關閉驗證碼校驗，便於聯調與冒煙測試
+  captcha:
+    enabled: false

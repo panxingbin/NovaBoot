@@ -1,0 +1,40 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: nova-boot
+  profiles:
+    # 默認 local（H2 內存庫，零依賴啟動）；生產切 mysql：--spring.profiles.active=mysql
+    active: ${SPRING_PROFILES_ACTIVE:local}
+
+mybatis-plus:
+  configuration:
+    map-underscore-to-camel-case: true
+  global-config:
+    banner: false
+    db-config:
+      id-type: auto
+      logic-delete-field: deleted
+      logic-delete-value: 1
+      logic-not-delete-value: 0
+
+sa-token:
+  token-name: Authorization
+  token-prefix: Bearer
+  timeout: 2592000
+  active-timeout: -1
+  is-concurrent: true
+  is-share: true
+  token-style: uuid
+  is-log: false
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+
+nova:
+  captcha:
+    enabled: true
+  init:
+    admin-password: admin123

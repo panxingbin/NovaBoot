@@ -1,0 +1,28 @@
+# Java
+target/
+*.class
+*.jar
+!.mvn/wrapper/maven-wrapper.jar
+
+# IDE
+.idea/
+*.iml
+.vscode/
+.settings/
+.classpath
+.project
+
+# Node / 前端
+node_modules/
+dist/
+*.local
+pnpm-debug.log*
+
+# 工具與臨時
+.tools/
+.tmp/
+*.log
+
+# OS
+.DS_Store
+Thumbs.db

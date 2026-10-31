@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <!-- 獨立 BOM：不繼承根 POM，避免 root -> BOM -> root 的 import 環 -->
+    <groupId>com.novaboot</groupId>
+    <artifactId>nova-dependencies</artifactId>
+    <version>1.0.0-SNAPSHOT</version>
+    <packaging>pom</packaging>
+    <name>NovaBoot :: Dependencies</name>
+    <description>三方依賴與內部模組版本統一管理（BOM）</description>
+
+    <properties>
+        <sa-token.version>1.46.0</sa-token.version>
+        <mybatis-plus.version>3.5.18</mybatis-plus.version>
+        <springdoc.version>3.2.0</springdoc.version>
+        <hutool.version>5.8.48</hutool.version>
+        <nova.version>1.0.0-SNAPSHOT</nova.version>
+    </properties>
+
+    <dependencyManagement>
+        <dependencies>
+            <!-- 三方 -->
+            <dependency>
+                <groupId>cn.dev33</groupId>
+                <artifactId>sa-token-spring-boot4-starter</artifactId>
+                <version>${sa-token.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.baomidou</groupId>
+                <artifactId>mybatis-plus-spring-boot4-starter</artifactId>
+                <version>${mybatis-plus.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.springdoc</groupId>
+                <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+                <version>${springdoc.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>cn.hutool</groupId>
+                <artifactId>hutool-all</artifactId>
+                <version>${hutool.version}</version>
+            </dependency>
+            <!-- 內部模組 -->
+            <dependency>
+                <groupId>com.novaboot</groupId>
+                <artifactId>nova-common</artifactId>
+                <version>${nova.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.novaboot</groupId>
+                <artifactId>nova-framework</artifactId>
+                <version>${nova.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.novaboot</groupId>
+                <artifactId>nova-module-system</artifactId>
+                <version>${nova.version}</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+</project>
