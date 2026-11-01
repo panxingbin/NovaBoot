@@ -18,6 +18,8 @@
 | ![用戶管理](docs/screenshots/user.png) | ![代碼生成器](docs/screenshots/generator-preview.png) | ![English](docs/screenshots/i18n-english.png) |
 | **頂部導航模式** | **側邊導航 + 深色側欄** | |
 | ![頂部導航模式](docs/screenshots/layout-top.png) | ![深色側欄](docs/screenshots/layout-sidebar-dark.png) | |
+| **請假申請（動態表單）** | **待辦審批（Flowable）** | |
+| ![請假申請](docs/screenshots/workflow-apply.png) | ![待辦審批](docs/screenshots/workflow-approve.png) | |
 
 > 更多截圖見 [docs/screenshots/](docs/screenshots/)（含登入頁、生成器主頁面等）。佈局模式與側欄配色在頂欄 ⚙ 設置中切換，localStorage 持久化。
 
@@ -72,7 +74,15 @@ nova-boot/
 - [x] M0 骨架：登入/驗證碼、用戶/角色/選單、動態路由、按鈕權限
 - [x] M1 系統模組：部門崗位、字典參數、通知公告、日誌審計、在線用戶、資料權限、檔案上傳（本地存儲）
 - [x] M2 效率與交付：代碼生成器、Excel 導入導出、Redis 會話、監控（Actuator + Prometheus）、Docker 一鍵部署、文檔站、v1.0.0
-- [x] M3 生態（首批）：AI Starter（LLM 網關）、郵件 Starter；多租戶、工作流、插件機制按模組持續演進
+- [x] M3 生態（首批）：**工作流（Flowable 8 + 可配置表單 + 請假示例）**、AI Starter（LLM 網關）、郵件 Starter；多租戶、插件機制按模組持續演進
+
+## 工作流（M3）
+
+- 引擎：**Flowable 8**（BPMN 2.0，僅 mysql profile 啟用；H2 本地開發自動排除以保持零依賴）
+- 可配置表單：`flow_form` 表存儲字段 schema（input/textarea/number/date/select + 必填/選項/範圍），前端 `DynamicForm` 組件按 schema 渲染
+- 請假示例：`leave` 流程（申請 → 主管審批 candidateGroups=admin → 批准/駁回網關），提交 → 待辦 → 審批 → 我的申請全鏈路
+- 接口：`/api/workflow/apply|todo|tasks/{id}/complete|mine|done` + `/api/workflow/forms` CRUD
+- 身份映射：Flowable userId = 系統用戶 ID；候選組 = 角色編碼（非 admin 角色需在選單管理為其分配工作流菜單後即可作為審批人）
 
 ## 部署
 

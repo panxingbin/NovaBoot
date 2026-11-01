@@ -25,11 +25,22 @@
         </dependency>
         <dependency>
             <groupId>com.novaboot</groupId>
+            <artifactId>nova-module-workflow</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.novaboot</groupId>
             <artifactId>nova-starter-ai</artifactId>
         </dependency>
         <dependency>
             <groupId>com.novaboot</groupId>
             <artifactId>nova-starter-mail</artifactId>
+        </dependency>
+
+        <!-- M3 工作流：Flowable 8（BPMN 引擎，表自動創建） -->
+        <dependency>
+            <groupId>org.flowable</groupId>
+            <artifactId>flowable-spring-boot-starter-process</artifactId>
+            <version>8.0.0</version>
         </dependency>
 
         <!-- 監控：健康檢查 + Prometheus 指標 -->

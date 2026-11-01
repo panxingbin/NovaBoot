@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+             xmlns:flowable="http://flowable.org/bpmn"
+             targetNamespace="http://novaboot.dev/workflow">
+
+  <!-- 請假審批流程：申請 → 主管審批（admin 角色候選）→ 批准/駁回 -->
+  <process id="leave" name="請假審批" isExecutable="true">
+    <startEvent id="start"/>
+    <sequenceFlow id="f1" sourceRef="start" targetRef="leaderTask"/>
+    <userTask id="leaderTask" name="主管審批" flowable:candidateGroups="admin"/>
+    <sequenceFlow id="f2" sourceRef="leaderTask" targetRef="approveGateway"/>
+    <exclusiveGateway id="approveGateway" name="審批結果"/>
+    <sequenceFlow id="f3" sourceRef="approveGateway" targetRef="approvedEnd">
+      <conditionExpression xsi:type="tFormalExpression">${approved}</conditionExpression>
+    </sequenceFlow>
+    <sequenceFlow id="f4" sourceRef="approveGateway" targetRef="rejectedEnd">
+      <conditionExpression xsi:type="tFormalExpression">${!approved}</conditionExpression>
+    </sequenceFlow>
+    <endEvent id="approvedEnd"/>
+    <endEvent id="rejectedEnd"/>
+  </process>
+
+</definitions>

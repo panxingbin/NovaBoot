@@ -46,6 +46,7 @@ import loginlog from './modules/loginlog'
 import online from './modules/online'
 import notfound from './modules/notfound'
 import gen from './modules/gen'
+import flow from './modules/flow'
 
 const pageFragments: Record<string, Record<'zhCN' | 'zhTW' | 'en', object>> = {
   user,
@@ -62,6 +63,7 @@ const pageFragments: Record<string, Record<'zhCN' | 'zhTW' | 'en', object>> = {
   online,
   notfound,
   gen,
+  flow,
 }
 
 type LangKey = 'zhCN' | 'zhTW' | 'en'

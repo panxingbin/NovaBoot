@@ -24,6 +24,7 @@
         <module>nova-framework</module>
         <module>nova-module-system</module>
         <module>nova-module-generator</module>
+        <module>nova-module-workflow</module>
         <module>nova-starter-ai</module>
         <module>nova-starter-mail</module>
         <module>nova-server-admin</module>

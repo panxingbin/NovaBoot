@@ -8,7 +8,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
  * NovaBoot 後台啟動入口
  */
 @SpringBootApplication
-@MapperScan("com.novaboot.module.system.mapper")
+@MapperScan({"com.novaboot.module.system.mapper", "com.novaboot.module.workflow.mapper"})
 public class NovaApplication {
 
     public static void main(String[] args) {
