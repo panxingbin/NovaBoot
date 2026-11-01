@@ -16,8 +16,10 @@
 | 用戶管理（含 Excel 導入導出） | 代碼生成器（在線預覽） | English 界面 |
 |---|---|---|
 | ![用戶管理](docs/screenshots/user.png) | ![代碼生成器](docs/screenshots/generator-preview.png) | ![English](docs/screenshots/i18n-english.png) |
+| **頂部導航模式** | **側邊導航 + 深色側欄** | |
+| ![頂部導航模式](docs/screenshots/layout-top.png) | ![深色側欄](docs/screenshots/layout-sidebar-dark.png) | |
 
-> 更多截圖見 [docs/screenshots/](docs/screenshots/)（含登入頁、生成器主頁面等）。
+> 更多截圖見 [docs/screenshots/](docs/screenshots/)（含登入頁、生成器主頁面等）。佈局模式與側欄配色在頂欄 ⚙ 設置中切換，localStorage 持久化。
 
 ## 技術棧
 

@@ -155,6 +155,39 @@ html[data-theme='glass'] .sidebar-menu {
   background: transparent;
 }
 
+/* ------------------------------ 導航佈局 ------------------------------ */
+/* 側欄配色（data-aside：follow 跟隨主題 / dark 深色 / light 淺色）與頂部導航模式 */
+
+html[data-aside='dark'] .layout-aside {
+  background: linear-gradient(180deg, #1f2430 0%, #171b24 100%);
+  border-right-color: rgba(255, 255, 255, 0.06);
+  --el-menu-text-color: #a8aebc;
+  --el-menu-hover-bg-color: rgba(255, 255, 255, 0.08);
+  --el-menu-active-color: var(--el-color-primary);
+}
+
+html[data-aside='dark'] .layout-aside .layout-logo {
+  color: #e7e9ee;
+}
+
+html[data-aside='dark'] .sidebar-menu {
+  background: transparent;
+}
+
+html[data-aside='light'] .layout-aside {
+  background: #ffffff;
+  border-right-color: var(--el-border-color-light);
+  --el-menu-text-color: #303133;
+  --el-menu-hover-bg-color: var(--el-fill-color-light);
+  --el-menu-active-color: var(--el-color-primary);
+}
+
+html[data-layout='top'] .top-menu {
+  --el-menu-border-color: transparent;
+  --el-menu-horizontal-height: 55px;
+  background: transparent;
+}
+
 /* ------------------------------ 漫畫 ------------------------------ */
 /* 粗黑描邊 + 硬陰影 + 網點紙 + 高飽和點綴色 */
 

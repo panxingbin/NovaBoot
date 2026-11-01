@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>NovaBoot 管理後台</title>
     <script>
-      // 首屏前同步主題，避免刷新時閃爍（與 useTheme.ts 的 THEME_KEY 一致）
-      // 支援 ?theme=dark|glass|manga|light 查詢參數直達（同時寫入 localStorage）
+      // 首屏前同步主題與導航佈局，避免刷新時閃爍（與 useTheme.ts / useLayout.ts 的 KEY 一致）
+      // 支援 ?theme=dark|glass|manga|light 與 ?lang= 查詢參數直達（同時寫入 localStorage）
       try {
         var t = new URLSearchParams(location.search).get('theme')
         if (t !== 'dark' && t !== 'glass' && t !== 'manga' && t !== 'light') {
@@ -20,8 +20,14 @@
         if (t === 'dark') {
           document.documentElement.classList.add('dark')
         }
+        var layout = JSON.parse(localStorage.getItem('nova_layout') || '{}')
+        document.documentElement.dataset.layout = layout.mode === 'top' ? 'top' : 'sidebar'
+        document.documentElement.dataset.aside =
+          ['follow', 'dark', 'light'].indexOf(layout.asideSkin) >= 0 ? layout.asideSkin : 'follow'
       } catch (e) {
         document.documentElement.dataset.theme = 'light'
+        document.documentElement.dataset.layout = 'sidebar'
+        document.documentElement.dataset.aside = 'follow'
       }
     </script>
   </head>
