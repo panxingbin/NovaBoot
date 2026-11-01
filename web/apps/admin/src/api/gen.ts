@@ -31,6 +31,7 @@ export interface GenOptionsBody {
   functionName: string
   author: string
   menuStartId: number
+  menuIcon?: string
 }
 
 export function listGenTables(): Promise<GenTableVO[]> {

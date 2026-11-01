@@ -66,6 +66,10 @@ export default {
     router: {
       login: '登录',
       dashboard: '首页',
+      iconPicker: '选择图标',
+      iconSearch: '搜索图标',
+      iconClear: '清除',
+      iconEmpty: '未找到匹配的图标',
       defaultTitle: 'NovaBoot 管理后台',
     },
   },
@@ -132,6 +136,10 @@ export default {
     router: {
       login: '登入',
       dashboard: '首頁',
+      iconPicker: '選擇圖標',
+      iconSearch: '搜索圖標',
+      iconClear: '清除',
+      iconEmpty: '未找到匹配的圖標',
       defaultTitle: 'NovaBoot 管理後台',
     },
   },
@@ -198,6 +206,10 @@ export default {
     router: {
       login: 'Sign in',
       dashboard: 'Home',
+      iconPicker: 'Select icon',
+      iconSearch: 'Search icons',
+      iconClear: 'Clear',
+      iconEmpty: 'No icons found',
       defaultTitle: 'NovaBoot Admin',
     },
   },

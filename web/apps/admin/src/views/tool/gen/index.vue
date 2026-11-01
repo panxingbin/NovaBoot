@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
+import IconPicker from '@/components/IconPicker.vue'
 import { ElMessage } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
 import { useI18n } from 'vue-i18n'
@@ -23,6 +24,7 @@ const form = reactive({
   functionName: '',
   author: DEFAULT_AUTHOR,
   menuStartId: DEFAULT_MENU_START_ID as number | undefined,
+  menuIcon: 'Grid',
 })
 
 const rules = computed<FormRules>(() => ({
@@ -137,6 +139,7 @@ function buildBody(): GenOptionsBody {
     functionName: form.functionName.trim(),
     author: form.author.trim() || DEFAULT_AUTHOR,
     menuStartId: form.menuStartId ?? DEFAULT_MENU_START_ID,
+    menuIcon: form.menuIcon,
   }
 }
 
@@ -234,6 +237,9 @@ onMounted(() => {
           :step="1"
           controls-position="right"
         />
+      </el-form-item>
+      <el-form-item :label="t('gen.menuIcon')">
+        <IconPicker v-model="form.menuIcon" class="w-field" :placeholder="t('gen.menuIcon')" />
       </el-form-item>
       <el-form-item>
         <el-button

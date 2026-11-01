@@ -29,6 +29,9 @@ public class GenOptions {
     /** 生成選單的起始 ID（目錄=起始，頁面=+1，按鈕=+2..+4） */
     private Long menuStartId = 1000L;
 
+    /** 選單圖標（Element Plus 圖標名，用於生成 menu.sql） */
+    private String menuIcon = "Grid";
+
     public void setTableName(String tableName) {
         if (tableName == null || !tableName.matches("[a-zA-Z][a-zA-Z0-9_]{0,63}")) {
             throw new BusinessException("表名不合法");
@@ -48,6 +51,21 @@ public class GenOptions {
             throw new BusinessException("業務名不合法（小寫字母開頭的小駝峰）");
         }
         this.businessName = businessName;
+    }
+
+    public void setMenuStartId(Long menuStartId) {
+        this.menuStartId = menuStartId == null || menuStartId < 1 ? 1000L : menuStartId;
+    }
+
+    public void setMenuIcon(String menuIcon) {
+        if (menuIcon == null || menuIcon.isBlank()) {
+            this.menuIcon = "Grid";
+            return;
+        }
+        if (!menuIcon.matches("[A-Za-z][A-Za-z0-9]{0,47}")) {
+            throw new BusinessException("選單圖標名不合法（Element Plus 圖標名）");
+        }
+        this.menuIcon = menuIcon;
     }
 
     public String getPackageName() {

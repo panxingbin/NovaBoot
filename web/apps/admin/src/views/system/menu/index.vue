@@ -8,6 +8,7 @@ import type { MenuSaveBody } from '@/api/system'
 import type { MenuType, MenuVO } from '@/api/types'
 import { buildTree } from '@/utils/menu'
 import { getIcon } from '@/utils/icons'
+import IconPicker from '@/components/IconPicker.vue'
 
 const { t } = useI18n()
 
@@ -296,12 +297,7 @@ onMounted(() => {
           <el-input v-model="form.perm" :placeholder="t('menu.permPlaceholder')" />
         </el-form-item>
         <el-form-item v-if="form.menuType !== 'B'" :label="t('menu.icon')">
-          <div class="icon-row">
-            <el-input v-model="form.icon" :placeholder="t('menu.iconPlaceholder')" />
-            <el-icon v-if="form.icon" class="icon-preview">
-              <component :is="getIcon(form.icon)" />
-            </el-icon>
-          </div>
+          <IconPicker v-model="form.icon" :placeholder="t('menu.iconPlaceholder')" />
         </el-form-item>
         <el-form-item :label="t('common.sortNo')">
           <el-input-number v-model="form.sortNo" :min="0" />
@@ -346,15 +342,5 @@ onMounted(() => {
 .menu-icon {
   margin-right: 6px;
   vertical-align: -2px;
-}
-.icon-row {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  width: 100%;
-}
-.icon-preview {
-  font-size: 20px;
-  color: var(--el-color-primary);
 }
 </style>
