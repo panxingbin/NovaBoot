@@ -9,6 +9,7 @@ import com.novaboot.module.system.datascope.DataScope;
 import com.novaboot.module.system.datascope.DataScopeHolder;
 import com.novaboot.module.system.datascope.DataScopeInfo;
 import com.novaboot.module.system.dto.UserBody;
+import com.novaboot.module.system.dto.UserExcelVO;
 import com.novaboot.module.system.dto.UserQuery;
 import com.novaboot.module.system.dto.UserVO;
 import com.novaboot.module.system.entity.SysUser;
@@ -38,6 +39,7 @@ public class SysUserService {
     private final SysUserRoleMapper sysUserRoleMapper;
     private final SysUserPostMapper sysUserPostMapper;
     private final PasswordEncoder passwordEncoder;
+    private final SysConfigService sysConfigService;
 
     /**
      * 分頁查詢（啟用 @DataScope 資料權限：按角色數據範圍過濾可見用戶）
@@ -148,6 +150,85 @@ public class SysUserService {
         }
         user.setPassword(passwordEncoder.encode(password));
         sysUserMapper.updateById(user);
+    }
+
+    /**
+     * 導出列表（與分頁同過濾條件並遵循資料權限，不分頁）
+     */
+    @DataScope
+    public List<UserExcelVO> exportList(UserQuery query) {
+        var wrapper = userQueryWrapper(query);
+        applyDataScope(wrapper);
+        return sysUserMapper.selectList(wrapper).stream()
+                .map(this::toExcelVO)
+                .toList();
+    }
+
+    /**
+     * Excel 導入：逐行校驗，全部有效才入庫；返回成功行數與失敗原因
+     */
+    @Transactional
+    public ImportResult importUsers(List<UserExcelVO> rows) {
+        List<String> errors = new java.util.ArrayList<>();
+        int success = 0;
+        for (int i = 0; i < rows.size(); i++) {
+            UserExcelVO row = rows.get(i);
+            int rowNo = i + 2;
+            String username = row.getUsername() == null ? "" : row.getUsername().trim();
+            if (username.isEmpty()) {
+                errors.add("第 " + rowNo + " 行：用戶名不能為空");
+                continue;
+            }
+            if (!StringUtils.hasText(row.getNickname())) {
+                errors.add("第 " + rowNo + " 行：暱稱不能為空");
+                continue;
+            }
+            Long exists = sysUserMapper.selectCount(
+                    Wrappers.<SysUser>lambdaQuery().eq(SysUser::getUsername, username));
+            if (exists != null && exists > 0) {
+                errors.add("第 " + rowNo + " 行：用戶名已存在（" + username + "）");
+                continue;
+            }
+            SysUser user = new SysUser();
+            user.setUsername(username);
+            user.setPassword(passwordEncoder.encode(defaultPassword()));
+            user.setNickname(row.getNickname().trim());
+            user.setEmail(row.getEmail());
+            user.setPhone(row.getPhone());
+            user.setStatus(row.getStatus() == null ? 1 : row.getStatus());
+            user.setRemark(row.getRemark());
+            sysUserMapper.insert(user);
+            success++;
+        }
+        return new ImportResult(success, errors.size(), errors);
+    }
+
+    public record ImportResult(int successCount, int failureCount, List<String> errors) {
+    }
+
+    private String defaultPassword() {
+        String configured = sysConfigService.valueOfKey("sys.user.initPassword");
+        return StringUtils.hasText(configured) ? configured : "admin123";
+    }
+
+    private com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<SysUser> userQueryWrapper(UserQuery query) {
+        return Wrappers.<SysUser>lambdaQuery()
+                .and(StringUtils.hasText(query.getKeyword()), w -> w
+                        .like(SysUser::getUsername, query.getKeyword())
+                        .or().like(SysUser::getNickname, query.getKeyword()))
+                .eq(query.getDeptId() != null, SysUser::getDeptId, query.getDeptId())
+                .orderByDesc(SysUser::getId);
+    }
+
+    private UserExcelVO toExcelVO(SysUser user) {
+        UserExcelVO vo = new UserExcelVO();
+        vo.setUsername(user.getUsername());
+        vo.setNickname(user.getNickname());
+        vo.setEmail(user.getEmail());
+        vo.setPhone(user.getPhone());
+        vo.setStatus(user.getStatus());
+        vo.setRemark(user.getRemark());
+        return vo;
     }
 
     /**

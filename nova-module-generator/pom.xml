@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>com.novaboot</groupId>
+        <artifactId>nova-boot</artifactId>
+        <version>1.0.0</version>
+    </parent>
+
+    <artifactId>nova-module-generator</artifactId>
+    <name>NovaBoot :: Module :: Generator</name>
+    <description>代碼生成器：讀取表元數據，在線預覽與下載前後端 CRUD 代碼及選單 SQL</description>
+
+    <dependencies>
+        <dependency>
+            <groupId>com.novaboot</groupId>
+            <artifactId>nova-framework</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.freemarker</groupId>
+            <artifactId>freemarker</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <optional>true</optional>
+        </dependency>
+    </dependencies>
+</project>

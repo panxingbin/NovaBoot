@@ -7,7 +7,7 @@
     <parent>
         <groupId>com.novaboot</groupId>
         <artifactId>nova-boot</artifactId>
-        <version>1.0.0-SNAPSHOT</version>
+        <version>1.0.0</version>
     </parent>
 
     <artifactId>nova-module-system</artifactId>
@@ -23,6 +23,11 @@
         <dependency>
             <groupId>org.aspectj</groupId>
             <artifactId>aspectjweaver</artifactId>
+        </dependency>
+        <!-- Excel 導入導出（FastExcel，EasyExcel 後繼） -->
+        <dependency>
+            <groupId>cn.idev.excel</groupId>
+            <artifactId>fastexcel</artifactId>
         </dependency>
         <dependency>
             <groupId>org.projectlombok</groupId>

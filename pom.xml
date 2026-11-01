@@ -13,7 +13,7 @@
 
     <groupId>com.novaboot</groupId>
     <artifactId>nova-boot</artifactId>
-    <version>1.0.0-SNAPSHOT</version>
+    <version>1.0.0</version>
     <packaging>pom</packaging>
     <name>NovaBoot</name>
     <description>NovaBoot - 開源企業級 Web 應用基礎框架</description>
@@ -23,6 +23,9 @@
         <module>nova-common</module>
         <module>nova-framework</module>
         <module>nova-module-system</module>
+        <module>nova-module-generator</module>
+        <module>nova-starter-ai</module>
+        <module>nova-starter-mail</module>
         <module>nova-server-admin</module>
     </modules>
 

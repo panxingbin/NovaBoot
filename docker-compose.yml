@@ -1,0 +1,71 @@
+# NovaBoot 一鍵部署：MySQL 8.4 + Redis 8 + 後端（Spring Boot）+ 前端（nginx）
+# 使用方式見 deploy/README.md：cp .env.example .env && docker compose up -d --build
+#
+# 憑證一律來自同目錄 .env（compose 自動讀取用於變量插值），切勿把真實密碼寫進本文件。
+
+services:
+  mysql:
+    image: mysql:8.4
+    container_name: nova-mysql
+    environment:
+      # 業務庫（Flyway 會在其中自動建表與寫入種子數據）
+      MYSQL_DATABASE: ${MYSQL_DB:-nova_boot}
+      # 必填：未設置時直接報錯，避免空密碼入庫
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?MYSQL_ROOT_PASSWORD 未設置，請先 cp .env.example .env 並修改密碼}
+    volumes:
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      # $$ 為 compose 轉義：實際在容器內展開為 $MYSQL_ROOT_PASSWORD
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p\"$$MYSQL_ROOT_PASSWORD\""]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 60s
+    restart: unless-stopped
+
+  redis:
+    image: redis:8-alpine
+    container_name: nova-redis
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 12
+    restart: unless-stopped
+
+  backend:
+    build: .
+    container_name: nova-backend
+    environment:
+      # 應用讀取的數據源/Redis 配置見 application-mysql.example.yml 的 ${MYSQL_*} / ${REDIS_*} 佔位符
+      SPRING_PROFILES_ACTIVE: mysql
+      MYSQL_HOST: mysql
+      MYSQL_PORT: 3306
+      MYSQL_DB: ${MYSQL_DB:-nova_boot}
+      MYSQL_USERNAME: root
+      # 按任務要求透傳 root 密碼（備份/運維腳本可能用到）
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      # 數據源密碼：應用讀取的是 MYSQL_PASSWORD，與 root 密碼同源
+      MYSQL_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      REDIS_HOST: ${REDIS_HOST:-redis}
+      REDIS_PORT: ${REDIS_PORT:-6379}
+    ports:
+      - "8080:8080"
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  frontend:
+    build: ./web
+    container_name: nova-frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+volumes:
+  mysql-data:

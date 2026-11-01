@@ -2,7 +2,7 @@
 
 一套開箱即用的開源企業級 Web 應用基礎框架：內置用戶、角色、選單（RBAC 權限體系）等後台系統標配能力，前後端分離，MIT 協議。
 
-> 當前狀態：**M1 系統模組**（M0 全部能力 + 部門/崗位、字典/參數、通知公告、操作/登入日誌、在線用戶與強退、資料權限、檔案上傳）。
+> 當前狀態：**v1.0.0**（M0 骨架 + M1 系統模組 + M2 交付：代碼生成器、Excel、監控、Docker、文檔站；M3 首批：AI/郵件 Starter；四主題、三語言）。
 > 技術選型與總體方案見 [docs/01-技術選型與總體方案.md](docs/01-技術選型與總體方案.md)。
 
 ## 技術棧
@@ -43,16 +43,26 @@ nova-boot/
 ├─ nova-common/             # 統一響應、分頁、異常、錯誤碼
 ├─ nova-framework/          # Web / Sa-Token / MyBatis-Plus / 驗證碼 / 全局異常
 ├─ nova-module-system/      # 系統模組：用戶、角色、選單（RBAC）
+├─ nova-module-generator/   # 代碼生成器（M2）
+├─ nova-starter-ai/         # M3 生態：OpenAI 兼容 LLM 網關 Starter
+├─ nova-starter-mail/       # M3 生態：郵件發送 Starter
 ├─ nova-server-admin/       # 後台服務啟動器（Flyway 腳本在此）
-└─ web/                     # 前端 pnpm monorepo（apps/admin）
+├─ web/                     # 前端 pnpm monorepo（apps/admin）
+└─ docs-site/               # VitePress 文檔站（docs-site）
 ```
 
 ## 路線圖
 
 - [x] M0 骨架：登入/驗證碼、用戶/角色/選單、動態路由、按鈕權限
-- [x] M1 系統模組：部門崗位、字典參數、通知公告、日誌審計、在線用戶、資料權限、檔案上傳（本地存儲；Redis 會話在 M2）
-- [ ] M2 效率與交付：代碼生成器、Excel、Redis 會話、監控、Docker 一鍵部署、文檔站、v1.0
-- [ ] M3 生態：多租戶、工作流、AI Starter、插件機制
+- [x] M1 系統模組：部門崗位、字典參數、通知公告、日誌審計、在線用戶、資料權限、檔案上傳（本地存儲）
+- [x] M2 效率與交付：代碼生成器、Excel 導入導出、Redis 會話、監控（Actuator + Prometheus）、Docker 一鍵部署、文檔站、v1.0.0
+- [x] M3 生態（首批）：AI Starter（LLM 網關）、郵件 Starter；多租戶、工作流、插件機制按模組持續演進
+
+## 部署
+
+- Docker 一鍵啟動（MySQL + Redis + 後端 + 前端 Nginx）：`cp .env.example .env && docker compose up -d --build`，詳見 [deploy/README.md](deploy/README.md)
+- 監控：`/actuator/health` 公開；`/actuator/prometheus` 需登入 Token（Prometheus 抓取配置 Bearer Token 即可）
+- 文檔站：`cd docs-site && pnpm install && pnpm run docs:dev`
 
 ## 協議
 

@@ -39,6 +39,19 @@ springdoc:
   swagger-ui:
     path: /swagger-ui.html
 
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
+  endpoint:
+    health:
+      show-details: never
+  prometheus:
+    metrics:
+      export:
+        enabled: true
+
 nova:
   captcha:
     enabled: true
@@ -49,3 +62,12 @@ nova:
     local-path: ./data/files
     # 拒絕上傳的擴展名（逗號分隔，大小寫不敏感），防止可執行/服務端腳本文件落地
     denied-extensions: jsp,jspx,jspf,war,sh,bash,bat,cmd,exe,dll,php,asp,aspx,ascx,cer,cdx,ashx,asmx,py,pl
+  ai:
+    # M3 AI Starter（OpenAI 兼容網關）：默認關閉，按需啟用
+    enabled: false
+    base-url: ${AI_BASE_URL:https://api.openai.com/v1}
+    api-key: ${AI_API_KEY:}
+    model: ${AI_MODEL:gpt-4o-mini}
+  mail:
+    # 發件人；SMTP 連接配置走 spring.mail.*（未配置時 /api/mail/send 返回明確業務錯誤）
+    from: ${MAIL_FROM:}

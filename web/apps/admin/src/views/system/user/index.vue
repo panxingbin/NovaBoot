@@ -3,11 +3,13 @@ import { computed, onMounted, reactive, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
 import { useI18n } from 'vue-i18n'
-import { Plus, Refresh, Search } from '@element-plus/icons-vue'
+import { Plus, Refresh, Search, Upload, Download } from '@element-plus/icons-vue'
 import {
   createUser,
   deleteUser,
+  exportUsers,
   getDeptTree,
+  importUsers,
   listAllPosts,
   pageRoles,
   pageUsers,
@@ -182,6 +184,37 @@ async function handleSubmit(): Promise<void> {
   void fetchList()
 }
 
+// ---------- Excel 導出 / 導入 ----------
+
+async function handleExport(): Promise<void> {
+  try {
+    await exportUsers({
+      keyword: query.keyword.trim() || undefined,
+      deptId: query.deptId,
+    })
+  } catch (error) {
+    ElMessage.error(error instanceof Error ? error.message : t('user.export'))
+  }
+}
+
+async function handleImport(options: { file: File }): Promise<void> {
+  try {
+    const result = await importUsers(options.file)
+    if (result.failureCount > 0) {
+      const lines = [t('user.importFailedRows', { count: result.failureCount }), ...result.errors]
+      await ElMessageBox.alert(lines.join('<br/>'), t('user.importResult'), {
+        dangerouslyUseHTMLString: true,
+        type: 'warning',
+      })
+    } else {
+      ElMessage.success(t('user.importSuccess', { count: result.successCount }))
+    }
+    void fetchList()
+  } catch (error) {
+    ElMessage.error(error instanceof Error ? error.message : t('user.importLabel'))
+  }
+}
+
 // ---------- 狀態開關 ----------
 
 async function handleStatusChange(row: UserVO): Promise<void> {
@@ -289,6 +322,19 @@ onMounted(() => {
       <el-button :icon="Refresh" @click="handleReset">{{ t('common.reset') }}</el-button>
       <el-button v-permission="'system:user:add'" type="primary" :icon="Plus" @click="openCreate">
         {{ t('user.addUser') }}
+      </el-button>
+      <el-upload
+        class="import-uploader"
+        :show-file-list="false"
+        accept=".xlsx,.xls"
+        :http-request="handleImport"
+      >
+        <el-button v-permission="'system:user:import'" type="warning" :icon="Upload">
+          {{ t('user.importLabel') }}
+        </el-button>
+      </el-upload>
+      <el-button v-permission="'system:user:export'" type="success" :icon="Download" @click="handleExport">
+        {{ t('user.export') }}
       </el-button>
     </div>
 
@@ -447,6 +493,9 @@ onMounted(() => {
 }
 .dept-select {
   width: 200px;
+}
+.import-uploader {
+  display: inline-block;
 }
 .pager {
   display: flex;

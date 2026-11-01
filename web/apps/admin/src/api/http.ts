@@ -110,3 +110,21 @@ export async function download(url: string, filename: string): Promise<void> {
   link.click()
   URL.revokeObjectURL(link.href)
 }
+
+/**
+ * 文件下載（POST，攜帶 JSON 請求體）：以 blob 方式拉取並觸發瀏覽器保存。
+ * 與 download 相同，後端業務錯誤以 HTTP 200 + JSON envelope 返回，需檢測 content-type 後轉為異常。
+ */
+export async function downloadPost(url: string, body: unknown, filename: string): Promise<void> {
+  const response = await instance.post(url, body, { responseType: 'blob' })
+  const blob = response.data as Blob
+  if (blob.type.includes('application/json')) {
+    const envelope = JSON.parse(await blob.text()) as ApiEnvelope<unknown>
+    throw new Error(envelope.message || '下載失敗')
+  }
+  const link = document.createElement('a')
+  link.href = URL.createObjectURL(blob)
+  link.download = filename
+  link.click()
+  URL.revokeObjectURL(link.href)
+}

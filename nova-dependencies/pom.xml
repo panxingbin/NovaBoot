@@ -7,7 +7,7 @@
     <!-- 獨立 BOM：不繼承根 POM，避免 root -> BOM -> root 的 import 環 -->
     <groupId>com.novaboot</groupId>
     <artifactId>nova-dependencies</artifactId>
-    <version>1.0.0-SNAPSHOT</version>
+    <version>1.0.0</version>
     <packaging>pom</packaging>
     <name>NovaBoot :: Dependencies</name>
     <description>三方依賴與內部模組版本統一管理（BOM）</description>
@@ -17,7 +17,8 @@
         <mybatis-plus.version>3.5.18</mybatis-plus.version>
         <springdoc.version>3.2.0</springdoc.version>
         <hutool.version>5.8.48</hutool.version>
-        <nova.version>1.0.0-SNAPSHOT</nova.version>
+        <fastexcel.version>1.3.0</fastexcel.version>
+        <nova.version>1.0.0</nova.version>
     </properties>
 
     <dependencyManagement>
@@ -48,6 +49,11 @@
                 <artifactId>hutool-all</artifactId>
                 <version>${hutool.version}</version>
             </dependency>
+            <dependency>
+                <groupId>cn.idev.excel</groupId>
+                <artifactId>fastexcel</artifactId>
+                <version>${fastexcel.version}</version>
+            </dependency>
             <!-- 內部模組 -->
             <dependency>
                 <groupId>com.novaboot</groupId>
@@ -62,6 +68,21 @@
             <dependency>
                 <groupId>com.novaboot</groupId>
                 <artifactId>nova-module-system</artifactId>
+                <version>${nova.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.novaboot</groupId>
+                <artifactId>nova-module-generator</artifactId>
+                <version>${nova.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.novaboot</groupId>
+                <artifactId>nova-starter-ai</artifactId>
+                <version>${nova.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.novaboot</groupId>
+                <artifactId>nova-starter-mail</artifactId>
                 <version>${nova.version}</version>
             </dependency>
         </dependencies>

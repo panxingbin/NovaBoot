@@ -1,0 +1,23 @@
+# 構建上下文瘦身：本地緩存與產物不入鏡像
+.git/
+.m2repo/
+.tools/
+.tmp/
+*.log
+
+# 前端依賴與構建產物（容器內自行安裝/構建）
+web/node_modules/
+web/.pnpm-store/
+web/apps/admin/dist/
+
+docs-site/node_modules/
+docs-site/.vitepress/dist/
+docs-site/dist/
+
+# 後端構建產物
+**/target/
+
+# 運行時數據與本地配置（含連接信息，嚴禁進入鏡像）
+nova-server-admin/data/
+nova-server-admin/src/main/resources/application-mysql.yml
+.env

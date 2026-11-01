@@ -7,7 +7,7 @@
     <parent>
         <groupId>com.novaboot</groupId>
         <artifactId>nova-boot</artifactId>
-        <version>1.0.0-SNAPSHOT</version>
+        <version>1.0.0</version>
     </parent>
 
     <artifactId>nova-server-admin</artifactId>
@@ -18,6 +18,29 @@
         <dependency>
             <groupId>com.novaboot</groupId>
             <artifactId>nova-module-system</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.novaboot</groupId>
+            <artifactId>nova-module-generator</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.novaboot</groupId>
+            <artifactId>nova-starter-ai</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.novaboot</groupId>
+            <artifactId>nova-starter-mail</artifactId>
+        </dependency>
+
+        <!-- 監控：健康檢查 + Prometheus 指標 -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-registry-prometheus</artifactId>
+            <scope>runtime</scope>
         </dependency>
 
         <!-- 資料庫運行時：默認 local 使用 H2，生產使用 MySQL -->

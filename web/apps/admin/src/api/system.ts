@@ -88,6 +88,30 @@ export function deleteUser(id: number): Promise<null> {
   return del<null>(`/api/system/users/${id}`)
 }
 
+export interface UserImportResult {
+  successCount: number
+  failureCount: number
+  errors: string[]
+}
+
+export function exportUsers(params: { keyword?: string; deptId?: number }): Promise<void> {
+  const search = new URLSearchParams()
+  if (params.keyword) {
+    search.set('keyword', params.keyword)
+  }
+  if (params.deptId != null) {
+    search.set('deptId', String(params.deptId))
+  }
+  const qs = search.toString()
+  return download(`/api/system/users/export${qs ? `?${qs}` : ''}`, 'users.xlsx')
+}
+
+export function importUsers(file: File): Promise<UserImportResult> {
+  const formData = new FormData()
+  formData.append('file', file)
+  return post<UserImportResult>('/api/system/users/import', formData)
+}
+
 // ---------- 角色 ----------
 
 export function pageRoles(params: RolePageParams): Promise<PageResult<RoleVO>> {

@@ -79,7 +79,41 @@ class AdminSmokeTest {
         assertTrue(menusBody.contains("\"code\":0"), menusBody);
         assertTrue(menusBody.contains("系統管理"), menusBody);
 
-        // 7. 登出後原 Token 再訪問 → 401
+        // 7. 代碼生成器（M2）：表清單含業務表，預覽生成物與 zip 下載可用
+        ResponseEntity<String> tables = restTemplate.exchange(url("/api/gen/tables"),
+                HttpMethod.GET, new HttpEntity<>(authHeaders), String.class);
+        String tablesBody = bodyOf(tables);
+        assertTrue(tablesBody.contains("\"code\":0"), tablesBody);
+        assertTrue(tablesBody.contains("sys_config"), tablesBody);
+
+        HttpHeaders jsonHeaders = new HttpHeaders();
+        jsonHeaders.setContentType(MediaType.APPLICATION_JSON);
+        jsonHeaders.put(HttpHeaders.AUTHORIZATION, authHeaders.get(HttpHeaders.AUTHORIZATION));
+        String previewRequest = "{\"tableName\":\"sys_config\",\"moduleName\":\"biz\",\"businessName\":\"demoConfig\","
+                + "\"functionName\":\"演示配置\",\"author\":\"test\",\"menuStartId\":9000}";
+        ResponseEntity<String> preview = restTemplate.exchange(url("/api/gen/preview"),
+                HttpMethod.POST, new HttpEntity<>(previewRequest, jsonHeaders), String.class);
+        String previewBody = bodyOf(preview);
+        assertTrue(previewBody.contains("\"code\":0"), previewBody);
+        assertTrue(previewBody.contains("DemoConfig.java"), previewBody);
+        assertTrue(previewBody.contains("DemoConfigController.java"), previewBody);
+        assertTrue(previewBody.contains("demoConfig.ts"), previewBody);
+        assertTrue(previewBody.contains("menu.sql"), previewBody);
+
+        ResponseEntity<byte[]> zip = restTemplate.exchange(url("/api/gen/download"),
+                HttpMethod.POST, new HttpEntity<>(previewRequest, jsonHeaders), byte[].class);
+        byte[] zipBody = zip.getBody();
+        assertTrue(zipBody != null && zipBody.length > 200 && zipBody[0] == 'P' && zipBody[1] == 'K',
+                "下載應為 zip 字節流");
+
+        // 8. Excel 導出（M2）：xlsx 字節流（PK 頭）
+        ResponseEntity<byte[]> excel = restTemplate.exchange(url("/api/system/users/export?pageNum=1&pageSize=10"),
+                HttpMethod.GET, new HttpEntity<>(authHeaders), byte[].class);
+        byte[] excelBody = excel.getBody();
+        assertTrue(excelBody != null && excelBody.length > 100 && excelBody[0] == 'P' && excelBody[1] == 'K',
+                "導出應為 xlsx 字節流");
+
+        // 9. 登出後原 Token 再訪問 → 401
         restTemplate.exchange(url("/api/auth/logout"), HttpMethod.POST,
                 new HttpEntity<>(authHeaders), String.class);
         ResponseEntity<String> afterLogout = restTemplate.exchange(url("/api/auth/profile"),

@@ -45,6 +45,7 @@ import operlog from './modules/operlog'
 import loginlog from './modules/loginlog'
 import online from './modules/online'
 import notfound from './modules/notfound'
+import gen from './modules/gen'
 
 const pageFragments: Record<string, Record<'zhCN' | 'zhTW' | 'en', object>> = {
   user,
@@ -60,6 +61,7 @@ const pageFragments: Record<string, Record<'zhCN' | 'zhTW' | 'en', object>> = {
   loginlog,
   online,
   notfound,
+  gen,
 }
 
 type LangKey = 'zhCN' | 'zhTW' | 'en'

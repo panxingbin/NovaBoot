@@ -31,3 +31,6 @@ application-mysql.yml
 # OS
 .DS_Store
 Thumbs.db
+
+# 本地環境變量（含連接信息）
+.env
