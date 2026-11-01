@@ -133,22 +133,44 @@ html[data-theme='glass'] body {
   background-attachment: fixed;
 }
 
-/* 磨砂玻璃面板：高斯模糊 + 飽和度提升 + 白色高光邊 */
+/* 磨砂玻璃面板：模糊放在 ::before 偽元素上。
+   若直接在元素上加 backdrop-filter，元素會成為內部 fixed 後代（如 el-dialog 遮罩）的包含塊，
+   導致對話框被限制在卡片內部出現滾動條；偽元素方案視覺一致且無此副作用。 */
 html[data-theme='glass'] .el-card,
-html[data-theme='glass'] .el-table,
+html[data-theme='glass'] .layout-aside,
+html[data-theme='glass'] .layout-header {
+  position: relative;
+  isolation: isolate;
+}
+
+html[data-theme='glass'] .el-card::before,
+html[data-theme='glass'] .layout-aside::before,
+html[data-theme='glass'] .layout-header::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  backdrop-filter: blur(22px) saturate(170%);
+  -webkit-backdrop-filter: blur(22px) saturate(170%);
+  pointer-events: none;
+}
+
 html[data-theme='glass'] .el-dialog,
 html[data-theme='glass'] .el-drawer,
 html[data-theme='glass'] .el-message,
 html[data-theme='glass'] .el-message-box,
-html[data-theme='glass'] .el-popper.is-light,
-html[data-theme='glass'] .layout-aside,
-html[data-theme='glass'] .layout-header {
-  backdrop-filter: blur(22px) saturate(170%);
-  -webkit-backdrop-filter: blur(22px) saturate(170%);
+html[data-theme='glass'] .el-popper.is-light {
   border-color: rgba(255, 255, 255, 0.55);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.65),
     0 8px 28px rgba(31, 38, 135, 0.1);
+}
+
+html[data-theme='glass'] .el-dialog,
+html[data-theme='glass'] .el-message-box {
+  backdrop-filter: blur(22px) saturate(170%);
+  -webkit-backdrop-filter: blur(22px) saturate(170%);
 }
 
 html[data-theme='glass'] .sidebar-menu {
