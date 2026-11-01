@@ -5,6 +5,20 @@
 > 當前狀態：**v1.0.0**（M0 骨架 + M1 系統模組 + M2 交付：代碼生成器、Excel、監控、Docker、文檔站；M3 首批：AI/郵件 Starter；四主題、三語言）。
 > 技術選型與總體方案見 [docs/01-技術選型與總體方案.md](docs/01-技術選型與總體方案.md)。
 
+## 界面預覽
+
+| 亮色主題 | 暗色主題 |
+|---|---|
+| ![亮色主題](docs/screenshots/dashboard-light.png) | ![暗色主題](docs/screenshots/dashboard-dark.png) |
+| **液態玻璃主題** | **漫畫主題** |
+| ![液態玻璃主題](docs/screenshots/dashboard-glass.png) | ![漫畫主題](docs/screenshots/dashboard-manga.png) |
+
+| 用戶管理（含 Excel 導入導出） | 代碼生成器（在線預覽） | English 界面 |
+|---|---|---|
+| ![用戶管理](docs/screenshots/user.png) | ![代碼生成器](docs/screenshots/generator-preview.png) | ![English](docs/screenshots/i18n-english.png) |
+
+> 更多截圖見 [docs/screenshots/](docs/screenshots/)（含登入頁、生成器主頁面等）。
+
 ## 技術棧
 
 | 層 | 選型 |
