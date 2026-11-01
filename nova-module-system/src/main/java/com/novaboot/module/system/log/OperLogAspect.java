@@ -26,6 +26,10 @@ import org.springframework.web.multipart.MultipartFile;
 @RequiredArgsConstructor
 public class OperLogAspect {
 
+    /** 匹配 password/pwd/secret/token 等鍵的賦值片段（Lombok toString 風格），值以逗號或右括號結束 */
+    private static final java.util.regex.Pattern SENSITIVE_PARAM = java.util.regex.Pattern.compile(
+            "(?i)((?:password|pwd|secret|token)\\s*=\\s*)[^,)]*");
+
     private final OperLogService operLogService;
     private final SysUserMapper sysUserMapper;
 
@@ -44,7 +48,7 @@ public class OperLogAspect {
         }
         record.setIp(ServletUtils.getIp());
         if (operLog.saveParam()) {
-            record.setParam(truncate(argsToString(joinPoint.getArgs()), 2000));
+            record.setParam(truncate(maskSensitive(argsToString(joinPoint.getArgs())), 2000));
         }
         try {
             Object result = joinPoint.proceed();
@@ -96,5 +100,15 @@ public class OperLogAspect {
             return null;
         }
         return s.length() <= max ? s : s.substring(0, max);
+    }
+
+    /**
+     * 對 Lombok toString 產出的參數文本做脫敏，避免密碼/令牌明文落庫
+     */
+    private String maskSensitive(String s) {
+        if (s == null || s.isEmpty()) {
+            return s;
+        }
+        return SENSITIVE_PARAM.matcher(s).replaceAll("$1***");
     }
 }

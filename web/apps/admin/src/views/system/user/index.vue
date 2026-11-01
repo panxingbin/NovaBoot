@@ -2,6 +2,7 @@
 import { computed, onMounted, reactive, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
+import { useI18n } from 'vue-i18n'
 import { Plus, Refresh, Search } from '@element-plus/icons-vue'
 import {
   createUser,
@@ -15,6 +16,8 @@ import {
 } from '@/api/system'
 import type { DeptVO, PostVO, RoleVO, UserVO } from '@/api/types'
 import { formatDateTime } from '@/utils/format'
+
+const { t } = useI18n()
 
 const loading = ref(false)
 const total = ref(0)
@@ -81,9 +84,9 @@ const form = reactive({
 })
 
 const rules = computed<FormRules>(() => ({
-  username: [{ required: true, message: '請輸入用戶名', trigger: 'blur' }],
-  password: isEdit.value ? [] : [{ required: true, message: '請輸入密碼', trigger: 'blur' }],
-  nickname: [{ required: true, message: '請輸入暱稱', trigger: 'blur' }],
+  username: [{ required: true, message: () => t('user.usernameRequired'), trigger: 'blur' }],
+  password: isEdit.value ? [] : [{ required: true, message: () => t('user.passwordRequired'), trigger: 'blur' }],
+  nickname: [{ required: true, message: () => t('user.nicknameRequired'), trigger: 'blur' }],
 }))
 
 async function fetchRoleOptions(): Promise<void> {
@@ -170,10 +173,10 @@ async function handleSubmit(): Promise<void> {
   }
   if (isEdit.value) {
     await updateUser(editingId.value, payload)
-    ElMessage.success('修改成功')
+    ElMessage.success(t('user.updateSuccess'))
   } else {
     await createUser({ ...payload, username: form.username, password: form.password })
-    ElMessage.success('新增成功')
+    ElMessage.success(t('user.createSuccess'))
   }
   dialogVisible.value = false
   void fetchList()
@@ -194,7 +197,7 @@ async function handleStatusChange(row: UserVO): Promise<void> {
       roleIds: row.roleIds,
       postIds: row.postIds,
     })
-    ElMessage.success(row.status === 1 ? '已啟用' : '已停用')
+    ElMessage.success(row.status === 1 ? t('common.enabled') : t('common.disabled'))
   } catch {
     row.status = original
   }
@@ -207,8 +210,8 @@ const pwdFormRef = ref<FormInstance>()
 const pwdForm = reactive({ userId: 0, username: '', password: '' })
 const pwdRules: FormRules = {
   password: [
-    { required: true, message: '請輸入新密碼', trigger: 'blur' },
-    { min: 6, message: '密碼至少 6 位', trigger: 'blur' },
+    { required: true, message: () => t('user.newPasswordRequired'), trigger: 'blur' },
+    { min: 6, message: () => t('user.passwordMinLength'), trigger: 'blur' },
   ],
 }
 
@@ -226,7 +229,7 @@ async function handleResetPwd(): Promise<void> {
     return
   }
   await updateUserPassword(pwdForm.userId, pwdForm.password)
-  ElMessage.success('密碼重置成功')
+  ElMessage.success(t('user.resetPwdSuccess'))
   pwdDialogVisible.value = false
 }
 
@@ -234,16 +237,16 @@ async function handleResetPwd(): Promise<void> {
 
 async function handleDelete(row: UserVO): Promise<void> {
   try {
-    await ElMessageBox.confirm(`確定要刪除用戶「${row.username}」嗎？`, '警告', {
-      confirmButtonText: '確定',
-      cancelButtonText: '取消',
+    await ElMessageBox.confirm(t('user.deleteConfirm', { name: row.username }), t('common.warning'), {
+      confirmButtonText: t('common.confirm'),
+      cancelButtonText: t('common.cancel'),
       type: 'warning',
     })
   } catch {
     return
   }
   await deleteUser(row.id)
-  ElMessage.success('刪除成功')
+  ElMessage.success(t('common.deleteSuccess'))
   if (records.value.length === 1 && query.pageNum > 1) {
     query.pageNum -= 1
   }
@@ -264,7 +267,7 @@ onMounted(() => {
       <el-input
         v-model="query.keyword"
         class="search-input"
-        placeholder="用戶名 / 暱稱"
+        :placeholder="t('user.searchPlaceholder')"
         clearable
         @keyup.enter="handleSearch"
         @clear="handleSearch"
@@ -279,26 +282,26 @@ onMounted(() => {
         clearable
         default-expand-all
         :render-after-expand="false"
-        placeholder="部門"
+        :placeholder="t('user.dept')"
         @change="handleDeptQueryChange"
       />
-      <el-button type="primary" :icon="Search" @click="handleSearch">搜索</el-button>
-      <el-button :icon="Refresh" @click="handleReset">重置</el-button>
+      <el-button type="primary" :icon="Search" @click="handleSearch">{{ t('common.search') }}</el-button>
+      <el-button :icon="Refresh" @click="handleReset">{{ t('common.reset') }}</el-button>
       <el-button v-permission="'system:user:add'" type="primary" :icon="Plus" @click="openCreate">
-        新增用戶
+        {{ t('user.addUser') }}
       </el-button>
     </div>
 
     <el-table v-loading="loading" :data="records" stripe>
-      <el-table-column prop="username" label="用戶名" min-width="110" />
-      <el-table-column prop="nickname" label="暱稱" min-width="110" />
-      <el-table-column label="郵箱" min-width="160">
+      <el-table-column prop="username" :label="t('user.username')" min-width="110" />
+      <el-table-column prop="nickname" :label="t('user.nickname')" min-width="110" />
+      <el-table-column :label="t('user.email')" min-width="160">
         <template #default="{ row }">{{ row.email || '-' }}</template>
       </el-table-column>
-      <el-table-column label="手機" min-width="130">
+      <el-table-column :label="t('user.phone')" min-width="130">
         <template #default="{ row }">{{ row.phone || '-' }}</template>
       </el-table-column>
-      <el-table-column label="狀態" width="90">
+      <el-table-column :label="t('common.status')" width="90">
         <template #default="{ row }">
           <el-switch
             v-permission="'system:user:edit'"
@@ -309,13 +312,13 @@ onMounted(() => {
           />
         </template>
       </el-table-column>
-      <el-table-column label="創建時間" width="170">
+      <el-table-column :label="t('common.createdAt')" width="170">
         <template #default="{ row }">{{ formatDateTime(row.createdAt) }}</template>
       </el-table-column>
-      <el-table-column label="操作" width="220" fixed="right">
+      <el-table-column :label="t('common.operation')" width="220" fixed="right">
         <template #default="{ row }">
           <el-button v-permission="'system:user:edit'" link type="primary" @click="openEdit(row as UserVO)">
-            修改
+            {{ t('common.edit') }}
           </el-button>
           <el-button
             v-permission="'system:user:resetPwd'"
@@ -323,7 +326,7 @@ onMounted(() => {
             type="warning"
             @click="openResetPwd(row as UserVO)"
           >
-            重置密碼
+            {{ t('user.resetPwd') }}
           </el-button>
           <el-button
             v-permission="'system:user:delete'"
@@ -331,7 +334,7 @@ onMounted(() => {
             type="danger"
             @click="handleDelete(row as UserVO)"
           >
-            刪除
+            {{ t('common.delete') }}
           </el-button>
         </template>
       </el-table-column>
@@ -351,27 +354,27 @@ onMounted(() => {
 
     <el-dialog
       v-model="dialogVisible"
-      :title="isEdit ? '修改用戶' : '新增用戶'"
+      :title="isEdit ? t('user.editUser') : t('user.addUser')"
       width="520px"
       destroy-on-close
     >
       <el-form ref="formRef" :model="form" :rules="rules" label-width="90px">
-        <el-form-item label="用戶名" prop="username">
-          <el-input v-model="form.username" :disabled="isEdit" placeholder="請輸入用戶名" />
+        <el-form-item :label="t('user.username')" prop="username">
+          <el-input v-model="form.username" :disabled="isEdit" :placeholder="t('user.usernamePlaceholder')" />
         </el-form-item>
-        <el-form-item v-if="!isEdit" label="密碼" prop="password">
-          <el-input v-model="form.password" type="password" show-password placeholder="請輸入密碼" />
+        <el-form-item v-if="!isEdit" :label="t('user.password')" prop="password">
+          <el-input v-model="form.password" type="password" show-password :placeholder="t('user.passwordPlaceholder')" />
         </el-form-item>
-        <el-form-item label="暱稱" prop="nickname">
-          <el-input v-model="form.nickname" placeholder="請輸入暱稱" />
+        <el-form-item :label="t('user.nickname')" prop="nickname">
+          <el-input v-model="form.nickname" :placeholder="t('user.nicknamePlaceholder')" />
         </el-form-item>
-        <el-form-item label="郵箱" prop="email">
-          <el-input v-model="form.email" placeholder="請輸入郵箱" />
+        <el-form-item :label="t('user.email')" prop="email">
+          <el-input v-model="form.email" :placeholder="t('user.emailPlaceholder')" />
         </el-form-item>
-        <el-form-item label="手機" prop="phone">
-          <el-input v-model="form.phone" placeholder="請輸入手機號" />
+        <el-form-item :label="t('user.phone')" prop="phone">
+          <el-input v-model="form.phone" :placeholder="t('user.phonePlaceholder')" />
         </el-form-item>
-        <el-form-item label="所屬部門" prop="deptId">
+        <el-form-item :label="t('user.deptLabel')" prop="deptId">
           <el-tree-select
             v-model="form.deptId"
             class="w-full"
@@ -382,51 +385,51 @@ onMounted(() => {
             clearable
             default-expand-all
             :render-after-expand="false"
-            placeholder="請選擇所屬部門"
+            :placeholder="t('user.deptPlaceholder')"
           />
         </el-form-item>
-        <el-form-item label="崗位" prop="postIds">
-          <el-select v-model="form.postIds" class="w-full" multiple placeholder="請選擇崗位">
+        <el-form-item :label="t('user.post')" prop="postIds">
+          <el-select v-model="form.postIds" class="w-full" multiple :placeholder="t('user.postPlaceholder')">
             <el-option v-for="post in postOptions" :key="post.id" :label="post.name" :value="post.id" />
           </el-select>
         </el-form-item>
-        <el-form-item label="狀態" prop="status">
+        <el-form-item :label="t('common.status')" prop="status">
           <el-switch v-model="form.status" :active-value="1" :inactive-value="0" />
         </el-form-item>
-        <el-form-item label="角色" prop="roleIds">
-          <el-select v-model="form.roleIds" class="w-full" multiple placeholder="請選擇角色">
+        <el-form-item :label="t('user.role')" prop="roleIds">
+          <el-select v-model="form.roleIds" class="w-full" multiple :placeholder="t('user.rolePlaceholder')">
             <el-option v-for="role in roleOptions" :key="role.id" :label="role.name" :value="role.id" />
           </el-select>
         </el-form-item>
-        <el-form-item label="備註" prop="remark">
-          <el-input v-model="form.remark" type="textarea" :rows="2" placeholder="請輸入備註" />
+        <el-form-item :label="t('common.remark')" prop="remark">
+          <el-input v-model="form.remark" type="textarea" :rows="2" :placeholder="t('user.remarkPlaceholder')" />
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="dialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="handleSubmit">確定</el-button>
+        <el-button @click="dialogVisible = false">{{ t('common.cancel') }}</el-button>
+        <el-button type="primary" @click="handleSubmit">{{ t('common.confirm') }}</el-button>
       </template>
     </el-dialog>
 
     <el-dialog
       v-model="pwdDialogVisible"
-      :title="`重置密碼 - ${pwdForm.username}`"
+      :title="t('user.resetPwdTitle', { name: pwdForm.username })"
       width="420px"
       destroy-on-close
     >
       <el-form ref="pwdFormRef" :model="pwdForm" :rules="pwdRules" label-width="90px">
-        <el-form-item label="新密碼" prop="password">
+        <el-form-item :label="t('user.newPassword')" prop="password">
           <el-input
             v-model="pwdForm.password"
             type="password"
             show-password
-            placeholder="請輸入新密碼"
+            :placeholder="t('user.newPasswordPlaceholder')"
           />
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="pwdDialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="handleResetPwd">確定</el-button>
+        <el-button @click="pwdDialogVisible = false">{{ t('common.cancel') }}</el-button>
+        <el-button type="primary" @click="handleResetPwd">{{ t('common.confirm') }}</el-button>
       </template>
     </el-dialog>
   </el-card>

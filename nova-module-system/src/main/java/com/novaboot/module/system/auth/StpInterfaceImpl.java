@@ -27,6 +27,7 @@ public class StpInterfaceImpl implements StpInterface {
     private final SysRoleMapper sysRoleMapper;
     private final SysRoleMenuMapper sysRoleMenuMapper;
     private final SysMenuMapper sysMenuMapper;
+    private final AdminRoleChecker adminRoleChecker;
 
     @Override
     public List<String> getPermissionList(Object loginId, String loginType) {
@@ -34,7 +35,7 @@ public class StpInterfaceImpl implements StpInterface {
         if (roleIds.isEmpty()) {
             return Collections.emptyList();
         }
-        if (isAdmin(roleIds)) {
+        if (adminRoleChecker.hasAdminRole(roleIds)) {
             return List.of("*:*:*");
         }
         List<Long> menuIds = sysRoleMenuMapper.selectList(
@@ -61,11 +62,6 @@ public class StpInterfaceImpl implements StpInterface {
         }
         return sysRoleMapper.selectList(Wrappers.<SysRole>lambdaQuery().in(SysRole::getId, roleIds))
                 .stream().map(SysRole::getCode).toList();
-    }
-
-    private boolean isAdmin(List<Long> roleIds) {
-        return sysRoleMapper.selectList(Wrappers.<SysRole>lambdaQuery().in(SysRole::getId, roleIds))
-                .stream().anyMatch(r -> "admin".equals(r.getCode()));
     }
 
     private List<Long> roleIdsOf(Long userId) {

@@ -1,10 +1,13 @@
 <script setup lang="ts">
-import { onMounted, reactive, ref } from 'vue'
+import { computed, onMounted, reactive, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Refresh, Search } from '@element-plus/icons-vue'
 import { deleteOperLog, pageOperLogs } from '@/api/monitor'
 import type { OperLogVO } from '@/api/types'
 import { formatDateTime } from '@/utils/format'
+
+const { t } = useI18n()
 
 const loading = ref(false)
 const total = ref(0)
@@ -17,17 +20,31 @@ const query = reactive({
   status: undefined as number | undefined,
 })
 
+const businessTypeTags: Record<number, 'info' | 'success' | 'warning' | 'danger' | 'primary'> = {
+  0: 'info',
+  1: 'success',
+  2: 'warning',
+  3: 'danger',
+  4: 'primary',
+  5: 'danger',
+  6: 'warning',
+}
+
+const businessTypeLabels = computed<Record<number, string>>(() => ({
+  0: t('operlog.typeOther'),
+  1: t('operlog.typeCreate'),
+  2: t('operlog.typeUpdate'),
+  3: t('operlog.typeDelete'),
+  4: t('operlog.typeGrant'),
+  5: t('operlog.typeForce'),
+  6: t('operlog.typeUpload'),
+}))
+
 function businessTypeMeta(type: number): { label: string; tag: 'info' | 'success' | 'warning' | 'danger' | 'primary' } {
-  const meta: Record<number, { label: string; tag: 'info' | 'success' | 'warning' | 'danger' | 'primary' }> = {
-    0: { label: '其它', tag: 'info' },
-    1: { label: '新增', tag: 'success' },
-    2: { label: '修改', tag: 'warning' },
-    3: { label: '刪除', tag: 'danger' },
-    4: { label: '授權', tag: 'primary' },
-    5: { label: '強退', tag: 'danger' },
-    6: { label: '上傳', tag: 'warning' },
+  return {
+    label: businessTypeLabels.value[type] ?? t('operlog.typeOther'),
+    tag: businessTypeTags[type] ?? 'info',
   }
-  return meta[type] ?? { label: '其它', tag: 'info' }
 }
 
 async function fetchList(): Promise<void> {
@@ -78,16 +95,20 @@ function openDetail(row: OperLogVO): void {
 
 async function handleDelete(row: OperLogVO): Promise<void> {
   try {
-    await ElMessageBox.confirm(`確定要刪除操作日誌「${row.title}」嗎？`, '警告', {
-      confirmButtonText: '確定',
-      cancelButtonText: '取消',
-      type: 'warning',
-    })
+    await ElMessageBox.confirm(
+      t('operlog.deleteConfirm', { name: row.title }),
+      t('common.warning'),
+      {
+        confirmButtonText: t('common.confirm'),
+        cancelButtonText: t('common.cancel'),
+        type: 'warning',
+      },
+    )
   } catch {
     return
   }
   await deleteOperLog(row.id)
-  ElMessage.success('刪除成功')
+  ElMessage.success(t('common.deleteSuccess'))
   if (records.value.length === 1 && query.pageNum > 1) {
     query.pageNum -= 1
   }
@@ -105,7 +126,7 @@ onMounted(() => {
       <el-input
         v-model="query.title"
         class="search-input"
-        placeholder="模塊標題"
+        :placeholder="t('operlog.moduleTitle')"
         clearable
         @keyup.enter="handleSearch"
         @clear="handleSearch"
@@ -113,7 +134,7 @@ onMounted(() => {
       <el-input
         v-model="query.username"
         class="search-input"
-        placeholder="操作人"
+        :placeholder="t('operlog.operName')"
         clearable
         @keyup.enter="handleSearch"
         @clear="handleSearch"
@@ -121,54 +142,58 @@ onMounted(() => {
       <el-select
         v-model="query.status"
         class="status-select"
-        placeholder="狀態"
+        :placeholder="t('common.status')"
         clearable
         @change="handleSearch"
       >
-        <el-option label="成功" :value="0" />
-        <el-option label="失敗" :value="1" />
+        <el-option :label="t('operlog.statusSuccess')" :value="0" />
+        <el-option :label="t('operlog.statusFail')" :value="1" />
       </el-select>
-      <el-button type="primary" :icon="Search" @click="handleSearch">搜索</el-button>
-      <el-button :icon="Refresh" @click="handleReset">重置</el-button>
+      <el-button type="primary" :icon="Search" @click="handleSearch">
+        {{ t('common.search') }}
+      </el-button>
+      <el-button :icon="Refresh" @click="handleReset">{{ t('common.reset') }}</el-button>
     </div>
 
     <el-table v-loading="loading" :data="records" stripe>
-      <el-table-column prop="title" label="模塊" min-width="120" show-overflow-tooltip />
-      <el-table-column label="類型" width="80" align="center">
+      <el-table-column prop="title" :label="t('operlog.module')" min-width="120" show-overflow-tooltip />
+      <el-table-column :label="t('operlog.type')" width="80" align="center">
         <template #default="{ row }">
           <el-tag :type="businessTypeMeta(row.businessType).tag" size="small">
             {{ businessTypeMeta(row.businessType).label }}
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column prop="operName" label="操作人" min-width="100" />
-      <el-table-column label="URL" min-width="180" show-overflow-tooltip>
+      <el-table-column prop="operName" :label="t('operlog.operName')" min-width="100" />
+      <el-table-column :label="t('operlog.url')" min-width="180" show-overflow-tooltip>
         <template #default="{ row }">{{ row.url || '-' }}</template>
       </el-table-column>
-      <el-table-column prop="ip" label="IP" min-width="120" />
-      <el-table-column label="狀態" width="80" align="center">
+      <el-table-column prop="ip" :label="t('operlog.ip')" min-width="120" />
+      <el-table-column :label="t('common.status')" width="80" align="center">
         <template #default="{ row }">
           <el-tag :type="row.status === 0 ? 'success' : 'danger'" size="small">
-            {{ row.status === 0 ? '成功' : '失敗' }}
+            {{ row.status === 0 ? t('operlog.statusSuccess') : t('operlog.statusFail') }}
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column label="耗時" width="90" align="center">
+      <el-table-column :label="t('operlog.costMs')" width="90" align="center">
         <template #default="{ row }">{{ row.costMs }} ms</template>
       </el-table-column>
-      <el-table-column label="時間" width="170">
+      <el-table-column :label="t('operlog.time')" width="170">
         <template #default="{ row }">{{ formatDateTime(row.createdAt) }}</template>
       </el-table-column>
-      <el-table-column label="操作" width="130" fixed="right">
+      <el-table-column :label="t('common.operation')" width="130" fixed="right">
         <template #default="{ row }">
-          <el-button link type="primary" @click="openDetail(row as OperLogVO)">詳情</el-button>
+          <el-button link type="primary" @click="openDetail(row as OperLogVO)">
+            {{ t('operlog.detail') }}
+          </el-button>
           <el-button
             v-permission="'monitor:operlog:delete'"
             link
             type="danger"
             @click="handleDelete(row as OperLogVO)"
           >
-            刪除
+            {{ t('common.delete') }}
           </el-button>
         </template>
       </el-table-column>
@@ -186,31 +211,31 @@ onMounted(() => {
       />
     </div>
 
-    <el-drawer v-model="detailVisible" title="操作日誌詳情" size="480px">
+    <el-drawer v-model="detailVisible" :title="t('operlog.detailTitle')" size="480px">
       <el-descriptions v-if="detail" :column="1" border>
-        <el-descriptions-item label="模塊標題">{{ detail.title }}</el-descriptions-item>
-        <el-descriptions-item label="業務類型">
+        <el-descriptions-item :label="t('operlog.moduleTitle')">{{ detail.title }}</el-descriptions-item>
+        <el-descriptions-item :label="t('operlog.businessType')">
           <el-tag :type="businessTypeMeta(detail.businessType).tag" size="small">
             {{ businessTypeMeta(detail.businessType).label }}
           </el-tag>
         </el-descriptions-item>
-        <el-descriptions-item label="操作人">{{ detail.operName }}</el-descriptions-item>
-        <el-descriptions-item label="請求方式">{{ detail.requestMethod || '-' }}</el-descriptions-item>
-        <el-descriptions-item label="方法">{{ detail.method || '-' }}</el-descriptions-item>
-        <el-descriptions-item label="URL">{{ detail.url || '-' }}</el-descriptions-item>
-        <el-descriptions-item label="IP">{{ detail.ip || '-' }}</el-descriptions-item>
-        <el-descriptions-item label="狀態">
+        <el-descriptions-item :label="t('operlog.operName')">{{ detail.operName }}</el-descriptions-item>
+        <el-descriptions-item :label="t('operlog.requestMethod')">{{ detail.requestMethod || '-' }}</el-descriptions-item>
+        <el-descriptions-item :label="t('operlog.method')">{{ detail.method || '-' }}</el-descriptions-item>
+        <el-descriptions-item :label="t('operlog.url')">{{ detail.url || '-' }}</el-descriptions-item>
+        <el-descriptions-item :label="t('operlog.ip')">{{ detail.ip || '-' }}</el-descriptions-item>
+        <el-descriptions-item :label="t('common.status')">
           <el-tag :type="detail.status === 0 ? 'success' : 'danger'" size="small">
-            {{ detail.status === 0 ? '成功' : '失敗' }}
+            {{ detail.status === 0 ? t('operlog.statusSuccess') : t('operlog.statusFail') }}
           </el-tag>
         </el-descriptions-item>
-        <el-descriptions-item label="耗時">{{ detail.costMs }} ms</el-descriptions-item>
-        <el-descriptions-item label="時間">{{ formatDateTime(detail.createdAt) }}</el-descriptions-item>
+        <el-descriptions-item :label="t('operlog.costMs')">{{ detail.costMs }} ms</el-descriptions-item>
+        <el-descriptions-item :label="t('operlog.time')">{{ formatDateTime(detail.createdAt) }}</el-descriptions-item>
       </el-descriptions>
       <div v-if="detail" class="detail-block">
-        <div class="detail-label">請求參數</div>
+        <div class="detail-label">{{ t('operlog.param') }}</div>
         <pre class="detail-pre">{{ detail.param || '-' }}</pre>
-        <div class="detail-label">錯誤信息</div>
+        <div class="detail-label">{{ t('operlog.errorMsg') }}</div>
         <pre class="detail-pre">{{ detail.errorMsg || '-' }}</pre>
       </div>
     </el-drawer>
@@ -242,12 +267,12 @@ onMounted(() => {
 .detail-label {
   font-weight: 600;
   margin: 10px 0 6px;
-  color: #303133;
+  color: var(--el-text-color-primary);
 }
 .detail-pre {
   margin: 0;
   padding: 10px;
-  background: #f5f7fa;
+  background: var(--el-fill-color-light);
   border-radius: 4px;
   white-space: pre-wrap;
   word-break: break-all;

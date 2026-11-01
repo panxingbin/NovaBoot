@@ -2,11 +2,13 @@ package com.novaboot.module.system.datascope;
 
 import cn.dev33.satoken.stp.StpUtil;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
+import com.novaboot.module.system.auth.AdminRoleChecker;
 import com.novaboot.module.system.entity.SysDept;
 import com.novaboot.module.system.entity.SysRole;
 import com.novaboot.module.system.entity.SysRoleDept;
 import com.novaboot.module.system.entity.SysUser;
 import com.novaboot.module.system.entity.SysUserRole;
+import com.novaboot.module.system.enums.DataScopeType;
 import com.novaboot.module.system.mapper.SysDeptMapper;
 import com.novaboot.module.system.mapper.SysRoleDeptMapper;
 import com.novaboot.module.system.mapper.SysRoleMapper;
@@ -28,7 +30,7 @@ import java.util.stream.Collectors;
 
 /**
  * 資料權限切面：計算當前用戶全部角色的數據範圍並集，放入 DataScopeHolder
- * （超級管理員 admin 不做任何過濾）
+ * （超級管理員不做任何過濾）
  */
 @Aspect
 @Component
@@ -40,6 +42,7 @@ public class DataScopeAspect {
     private final SysUserMapper sysUserMapper;
     private final SysUserRoleMapper sysUserRoleMapper;
     private final SysDeptMapper sysDeptMapper;
+    private final AdminRoleChecker adminRoleChecker;
 
     @Around("@annotation(dataScope)")
     public Object around(ProceedingJoinPoint joinPoint, DataScope dataScope) throws Throwable {
@@ -65,9 +68,7 @@ public class DataScopeAspect {
         if (roleIds.isEmpty()) {
             return new DataScopeInfo(Collections.emptyList(), null);
         }
-        List<SysRole> roles = sysRoleMapper.selectList(
-                Wrappers.<SysRole>lambdaQuery().in(SysRole::getId, roleIds));
-        if (roles.stream().anyMatch(r -> "admin".equals(r.getCode()))) {
+        if (adminRoleChecker.hasAdminRole(roleIds)) {
             return null;
         }
         Set<Long> deptIds = new LinkedHashSet<>();
@@ -75,29 +76,27 @@ public class DataScopeAspect {
         SysUser user = sysUserMapper.selectById(userId);
         Long ownDeptId = user == null ? null : user.getDeptId();
 
-        for (SysRole role : roles) {
-            Integer scope = role.getDataScope() == null ? 1 : role.getDataScope();
-            switch (scope) {
-                case 1 -> {
+        for (SysRole role : sysRoleMapper.selectList(Wrappers.<SysRole>lambdaQuery().in(SysRole::getId, roleIds))) {
+            // 並集語義：任一角色為「全部」即不過濾
+            switch (DataScopeType.of(role.getDataScope())) {
+                case ALL -> {
                     return null;
                 }
-                case 2 -> deptIds.addAll(sysRoleDeptMapper.selectList(
+                case CUSTOM_DEPT -> deptIds.addAll(sysRoleDeptMapper.selectList(
                                 Wrappers.<SysRoleDept>lambdaQuery().eq(SysRoleDept::getRoleId, role.getId()))
                         .stream().map(SysRoleDept::getDeptId).toList());
-                case 3 -> {
+                case DEPT -> {
                     if (ownDeptId != null) {
                         deptIds.add(ownDeptId);
                     }
                 }
-                case 4 -> {
+                case DEPT_AND_CHILD -> {
                     if (ownDeptId != null) {
                         deptIds.add(ownDeptId);
                         deptIds.addAll(descendantsOf(ownDeptId));
                     }
                 }
-                case 5 -> selfUserId = userId;
-                default -> {
-                }
+                case SELF -> selfUserId = userId;
             }
         }
         return new DataScopeInfo(new ArrayList<>(deptIds), selfUserId);

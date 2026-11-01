@@ -32,7 +32,7 @@ sa-token:
   is-share: true
   token-style: uuid
   is-log: false
-  # 內存 DAO 的搜索（如在線用戶列表）依賴定時刷新，開發環境縮短為 5s；Redis 環境實時不受影響
+  # 僅對內存 DAO 生效（local profile）；mysql profile 會話存 Redis，查詢實時
   data-refresh-period: 5
 
 springdoc:
@@ -47,3 +47,5 @@ nova:
   storage:
     # 檔案本地存儲根目錄（相對應用工作目錄）
     local-path: ./data/files
+    # 拒絕上傳的擴展名（逗號分隔，大小寫不敏感），防止可執行/服務端腳本文件落地
+    denied-extensions: jsp,jspx,jspf,war,sh,bash,bat,cmd,exe,dll,php,asp,aspx,ascx,cer,cdx,ashx,asmx,py,pl

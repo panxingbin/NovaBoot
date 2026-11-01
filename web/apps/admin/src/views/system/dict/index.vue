@@ -3,6 +3,7 @@ import { onMounted, reactive, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
 import { Plus, Refresh, Search } from '@element-plus/icons-vue'
+import { useI18n } from 'vue-i18n'
 import {
   createDictData,
   createDictType,
@@ -15,6 +16,8 @@ import {
 } from '@/api/system'
 import type { DictDataVO, DictTypeVO } from '@/api/types'
 import { formatDateTime } from '@/utils/format'
+
+const { t } = useI18n()
 
 // ---------- 左側：字典類型 ----------
 
@@ -68,8 +71,8 @@ const typeFormRef = ref<FormInstance>()
 const typeForm = reactive({ name: '', type: '', remark: '' })
 
 const typeRules: FormRules = {
-  name: [{ required: true, message: '請輸入字典名稱', trigger: 'blur' }],
-  type: [{ required: true, message: '請輸入類型標識', trigger: 'blur' }],
+  name: [{ required: true, message: () => t('dict.typeNameRequired'), trigger: 'blur' }],
+  type: [{ required: true, message: () => t('dict.typeCodeRequired'), trigger: 'blur' }],
 }
 
 function openTypeCreate(): void {
@@ -99,10 +102,10 @@ async function handleTypeSubmit(): Promise<void> {
   }
   if (typeIsEdit.value) {
     await updateDictType(typeEditingId.value, payload)
-    ElMessage.success('修改成功')
+    ElMessage.success(t('common.saveSuccess'))
   } else {
     await createDictType(payload)
-    ElMessage.success('新增成功')
+    ElMessage.success(t('common.saveSuccess'))
   }
   typeDialogVisible.value = false
   void fetchTypes()
@@ -110,16 +113,20 @@ async function handleTypeSubmit(): Promise<void> {
 
 async function handleTypeDelete(row: DictTypeVO): Promise<void> {
   try {
-    await ElMessageBox.confirm(`確定要刪除字典類型「${row.name}」嗎？`, '警告', {
-      confirmButtonText: '確定',
-      cancelButtonText: '取消',
-      type: 'warning',
-    })
+    await ElMessageBox.confirm(
+      t('dict.typeDeleteConfirm', { name: row.name }),
+      t('common.warning'),
+      {
+        confirmButtonText: t('common.confirm'),
+        cancelButtonText: t('common.cancel'),
+        type: 'warning',
+      },
+    )
   } catch {
     return
   }
   await deleteDictType(row.id)
-  ElMessage.success('刪除成功')
+  ElMessage.success(t('common.deleteSuccess'))
   if (selectedType.value?.id === row.id) {
     selectedType.value = null
     dataRecords.value = []
@@ -179,13 +186,13 @@ const dataFormRef = ref<FormInstance>()
 const dataForm = reactive({ label: '', value: '', sortNo: 0, status: 1, remark: '' })
 
 const dataRules: FormRules = {
-  label: [{ required: true, message: '請輸入標籤', trigger: 'blur' }],
-  value: [{ required: true, message: '請輸入鍵值', trigger: 'blur' }],
+  label: [{ required: true, message: () => t('dict.dataLabelRequired'), trigger: 'blur' }],
+  value: [{ required: true, message: () => t('dict.dataValueRequired'), trigger: 'blur' }],
 }
 
 function openDataCreate(): void {
   if (!selectedType.value) {
-    ElMessage.warning('請先在左側選擇字典類型')
+    ElMessage.warning(t('dict.selectTypeFirst'))
     return
   }
   dataIsEdit.value = false
@@ -226,10 +233,10 @@ async function handleDataSubmit(): Promise<void> {
   }
   if (dataIsEdit.value) {
     await updateDictData(dataEditingId.value, payload)
-    ElMessage.success('修改成功')
+    ElMessage.success(t('common.saveSuccess'))
   } else {
     await createDictData(payload)
-    ElMessage.success('新增成功')
+    ElMessage.success(t('common.saveSuccess'))
   }
   dataDialogVisible.value = false
   void fetchData()
@@ -237,16 +244,20 @@ async function handleDataSubmit(): Promise<void> {
 
 async function handleDataDelete(row: DictDataVO): Promise<void> {
   try {
-    await ElMessageBox.confirm(`確定要刪除字典項「${row.label}」嗎？`, '警告', {
-      confirmButtonText: '確定',
-      cancelButtonText: '取消',
-      type: 'warning',
-    })
+    await ElMessageBox.confirm(
+      t('dict.dataDeleteConfirm', { name: row.label }),
+      t('common.warning'),
+      {
+        confirmButtonText: t('common.confirm'),
+        cancelButtonText: t('common.cancel'),
+        type: 'warning',
+      },
+    )
   } catch {
     return
   }
   await deleteDictData(row.id)
-  ElMessage.success('刪除成功')
+  ElMessage.success(t('common.deleteSuccess'))
   void fetchData()
 }
 
@@ -262,7 +273,7 @@ onMounted(() => {
         <el-card shadow="never" class="dict-card">
           <template #header>
             <div class="card-header">
-              <span>字典類型</span>
+              <span>{{ t('dict.typeTitle') }}</span>
               <el-button
                 v-permission="'system:dict:add'"
                 type="primary"
@@ -270,7 +281,7 @@ onMounted(() => {
                 :icon="Plus"
                 @click="openTypeCreate"
               >
-                新增類型
+                {{ t('dict.typeAdd') }}
               </el-button>
             </div>
           </template>
@@ -279,15 +290,15 @@ onMounted(() => {
               v-model="typeQuery.keyword"
               class="mini-search"
               size="small"
-              placeholder="名稱 / 類型標識"
+              :placeholder="t('dict.typeSearchPlaceholder')"
               clearable
               @keyup.enter="handleTypeSearch"
               @clear="handleTypeSearch"
             />
             <el-button size="small" type="primary" :icon="Search" @click="handleTypeSearch">
-              搜索
+              {{ t('common.search') }}
             </el-button>
-            <el-button size="small" :icon="Refresh" @click="handleTypeReset">重置</el-button>
+            <el-button size="small" :icon="Refresh" @click="handleTypeReset">{{ t('common.reset') }}</el-button>
           </div>
           <el-table
             v-loading="typeLoading"
@@ -296,9 +307,9 @@ onMounted(() => {
             highlight-current-row
             @current-change="handleTypeSelect"
           >
-            <el-table-column prop="name" label="名稱" min-width="110" show-overflow-tooltip />
-            <el-table-column prop="type" label="類型標識" min-width="130" show-overflow-tooltip />
-            <el-table-column label="操作" width="110">
+            <el-table-column prop="name" :label="t('dict.typeName')" min-width="110" show-overflow-tooltip />
+            <el-table-column prop="type" :label="t('dict.typeType')" min-width="130" show-overflow-tooltip />
+            <el-table-column :label="t('common.operation')" width="110">
               <template #default="{ row }">
                 <el-button
                   v-permission="'system:dict:edit'"
@@ -307,7 +318,7 @@ onMounted(() => {
                   size="small"
                   @click.stop="openTypeEdit(row as DictTypeVO)"
                 >
-                  修改
+                  {{ t('common.edit') }}
                 </el-button>
                 <el-button
                   v-permission="'system:dict:delete'"
@@ -316,7 +327,7 @@ onMounted(() => {
                   size="small"
                   @click.stop="handleTypeDelete(row as DictTypeVO)"
                 >
-                  刪除
+                  {{ t('common.delete') }}
                 </el-button>
               </template>
             </el-table-column>
@@ -338,7 +349,7 @@ onMounted(() => {
         <el-card shadow="never" class="dict-card">
           <template #header>
             <div class="card-header">
-              <span>字典數據{{ selectedType ? ` - ${selectedType.name}` : '' }}</span>
+              <span>{{ t('dict.dataTitle') }}{{ selectedType ? ` - ${selectedType.name}` : '' }}</span>
               <el-button
                 v-permission="'system:dict:add'"
                 type="primary"
@@ -347,7 +358,7 @@ onMounted(() => {
                 :disabled="!selectedType"
                 @click="openDataCreate"
               >
-                新增數據
+                {{ t('dict.dataAdd') }}
               </el-button>
             </div>
           </template>
@@ -357,31 +368,31 @@ onMounted(() => {
                 v-model="dataQuery.keyword"
                 class="mini-search"
                 size="small"
-                placeholder="標籤 / 鍵值"
+                :placeholder="t('dict.dataSearchPlaceholder')"
                 clearable
                 @keyup.enter="handleDataSearch"
                 @clear="handleDataSearch"
               />
               <el-button size="small" type="primary" :icon="Search" @click="handleDataSearch">
-                搜索
+                {{ t('common.search') }}
               </el-button>
-              <el-button size="small" :icon="Refresh" @click="handleDataReset">重置</el-button>
+              <el-button size="small" :icon="Refresh" @click="handleDataReset">{{ t('common.reset') }}</el-button>
             </div>
             <el-table v-loading="dataLoading" :data="dataRecords" size="small">
-              <el-table-column prop="label" label="標籤" min-width="110" />
-              <el-table-column prop="value" label="鍵值" min-width="110" />
-              <el-table-column prop="sortNo" label="排序" width="60" align="center" />
-              <el-table-column label="狀態" width="80" align="center">
+              <el-table-column prop="label" :label="t('dict.dataLabel')" min-width="110" />
+              <el-table-column prop="value" :label="t('dict.dataValue')" min-width="110" />
+              <el-table-column prop="sortNo" :label="t('common.sortNo')" width="60" align="center" />
+              <el-table-column :label="t('common.status')" width="80" align="center">
                 <template #default="{ row }">
                   <el-tag :type="row.status === 1 ? 'success' : 'danger'" size="small">
-                    {{ row.status === 1 ? '正常' : '停用' }}
+                    {{ row.status === 1 ? t('dict.statusNormal') : t('common.disabled') }}
                   </el-tag>
                 </template>
               </el-table-column>
-              <el-table-column label="備註" min-width="110">
+              <el-table-column :label="t('common.remark')" min-width="110">
                 <template #default="{ row }">{{ row.remark || '-' }}</template>
               </el-table-column>
-              <el-table-column label="操作" width="110">
+              <el-table-column :label="t('common.operation')" width="110">
                 <template #default="{ row }">
                   <el-button
                     v-permission="'system:dict:edit'"
@@ -390,7 +401,7 @@ onMounted(() => {
                     size="small"
                     @click="openDataEdit(row as DictDataVO)"
                   >
-                    修改
+                    {{ t('common.edit') }}
                   </el-button>
                   <el-button
                     v-permission="'system:dict:delete'"
@@ -399,7 +410,7 @@ onMounted(() => {
                     size="small"
                     @click="handleDataDelete(row as DictDataVO)"
                   >
-                    刪除
+                    {{ t('common.delete') }}
                   </el-button>
                 </template>
               </el-table-column>
@@ -415,63 +426,63 @@ onMounted(() => {
               />
             </div>
           </template>
-          <el-empty v-else description="請在左側選擇字典類型" />
+          <el-empty v-else :description="t('dict.selectTypeEmpty')" />
         </el-card>
       </el-col>
     </el-row>
 
     <el-dialog
       v-model="typeDialogVisible"
-      :title="typeIsEdit ? '修改字典類型' : '新增字典類型'"
+      :title="typeIsEdit ? t('dict.typeEditTitle') : t('dict.typeAddTitle')"
       width="460px"
       destroy-on-close
     >
       <el-form ref="typeFormRef" :model="typeForm" :rules="typeRules" label-width="90px">
-        <el-form-item label="名稱" prop="name">
-          <el-input v-model="typeForm.name" placeholder="請輸入字典名稱" />
+        <el-form-item :label="t('dict.typeName')" prop="name">
+          <el-input v-model="typeForm.name" :placeholder="t('dict.typeNameRequired')" />
         </el-form-item>
-        <el-form-item label="類型標識" prop="type">
-          <el-input v-model="typeForm.type" placeholder="請輸入類型標識，如 sys_user_sex" />
+        <el-form-item :label="t('dict.typeType')" prop="type">
+          <el-input v-model="typeForm.type" :placeholder="t('dict.typeCodePlaceholder')" />
         </el-form-item>
-        <el-form-item label="備註" prop="remark">
-          <el-input v-model="typeForm.remark" type="textarea" :rows="2" placeholder="請輸入備註" />
+        <el-form-item :label="t('common.remark')" prop="remark">
+          <el-input v-model="typeForm.remark" type="textarea" :rows="2" :placeholder="t('dict.remarkPlaceholder')" />
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="typeDialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="handleTypeSubmit">確定</el-button>
+        <el-button @click="typeDialogVisible = false">{{ t('common.cancel') }}</el-button>
+        <el-button type="primary" @click="handleTypeSubmit">{{ t('common.confirm') }}</el-button>
       </template>
     </el-dialog>
 
     <el-dialog
       v-model="dataDialogVisible"
-      :title="dataIsEdit ? '修改字典數據' : '新增字典數據'"
+      :title="dataIsEdit ? t('dict.dataEditTitle') : t('dict.dataAddTitle')"
       width="480px"
       destroy-on-close
     >
       <el-form ref="dataFormRef" :model="dataForm" :rules="dataRules" label-width="90px">
-        <el-form-item label="所屬類型">
+        <el-form-item :label="t('dict.ownerType')">
           <el-input :model-value="selectedType?.type" disabled />
         </el-form-item>
-        <el-form-item label="標籤" prop="label">
-          <el-input v-model="dataForm.label" placeholder="請輸入標籤" />
+        <el-form-item :label="t('dict.dataLabel')" prop="label">
+          <el-input v-model="dataForm.label" :placeholder="t('dict.dataLabelRequired')" />
         </el-form-item>
-        <el-form-item label="鍵值" prop="value">
-          <el-input v-model="dataForm.value" placeholder="請輸入鍵值" />
+        <el-form-item :label="t('dict.dataValue')" prop="value">
+          <el-input v-model="dataForm.value" :placeholder="t('dict.dataValueRequired')" />
         </el-form-item>
-        <el-form-item label="排序" prop="sortNo">
+        <el-form-item :label="t('common.sortNo')" prop="sortNo">
           <el-input-number v-model="dataForm.sortNo" :min="0" />
         </el-form-item>
-        <el-form-item label="狀態" prop="status">
+        <el-form-item :label="t('common.status')" prop="status">
           <el-switch v-model="dataForm.status" :active-value="1" :inactive-value="0" />
         </el-form-item>
-        <el-form-item label="備註" prop="remark">
-          <el-input v-model="dataForm.remark" type="textarea" :rows="2" placeholder="請輸入備註" />
+        <el-form-item :label="t('common.remark')" prop="remark">
+          <el-input v-model="dataForm.remark" type="textarea" :rows="2" :placeholder="t('dict.remarkPlaceholder')" />
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="dataDialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="handleDataSubmit">確定</el-button>
+        <el-button @click="dataDialogVisible = false">{{ t('common.cancel') }}</el-button>
+        <el-button type="primary" @click="handleDataSubmit">{{ t('common.confirm') }}</el-button>
       </template>
     </el-dialog>
   </div>

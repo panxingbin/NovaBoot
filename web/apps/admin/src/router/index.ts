@@ -2,6 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 import type { RouteComponent, RouteRecordRaw } from 'vue-router'
 import Layout from '@/layout/Layout.vue'
 import { useUserStore } from '@/stores/user'
+import { i18n } from '@/locales'
 import type { MenuTreeNode } from '@/api/types'
 
 const routes: RouteRecordRaw[] = [
@@ -9,7 +10,7 @@ const routes: RouteRecordRaw[] = [
     path: '/login',
     name: 'Login',
     component: () => import('@/views/login/index.vue'),
-    meta: { title: '登入' },
+    meta: { titleKey: 'router.login' },
   },
   {
     path: '/',
@@ -21,7 +22,7 @@ const routes: RouteRecordRaw[] = [
         path: 'dashboard',
         name: 'Dashboard',
         component: () => import('@/views/dashboard/index.vue'),
-        meta: { title: '首頁' },
+        meta: { titleKey: 'dashboard.title' },
       },
     ],
   },
@@ -31,7 +32,7 @@ const notFoundRoute: RouteRecordRaw = {
   path: '/:pathMatch(.*)*',
   name: 'NotFound',
   component: () => import('@/views/notfound/index.vue'),
-  meta: { title: '找不到頁面' },
+  meta: { titleKey: 'notfound.title' },
 }
 
 const reservedPaths = new Set<string>(['/login', '/dashboard'])
@@ -146,8 +147,20 @@ router.beforeEach(async (to, _from, next) => {
   next()
 })
 
+/**
+ * 當前路由的標題：靜態路由取 i18n 鍵，動態菜單路由用後端返回的名稱
+ */
+export function pageTitleOf(route: { meta: Record<string, unknown> }): string {
+  const titleKey = route.meta.titleKey as string | undefined
+  if (titleKey) {
+    return i18n.global.t(titleKey)
+  }
+  return (route.meta.title as string | undefined) ?? ''
+}
+
 router.afterEach((to) => {
-  document.title = to.meta.title ? `${to.meta.title} · NovaBoot` : 'NovaBoot 管理後台'
+  const title = pageTitleOf(to)
+  document.title = title ? `${title} · NovaBoot` : i18n.global.t('router.defaultTitle')
 })
 
 export default router

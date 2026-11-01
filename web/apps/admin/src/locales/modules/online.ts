@@ -1,0 +1,32 @@
+export default {
+  zhCN: {
+    username: '用户名',
+    nickname: '昵称',
+    device: '设备',
+    loginTime: '登录时间',
+    forceLogout: '强制下线',
+    forceLogoutConfirm: '确定要强制用户「{name}」下线吗？',
+    forceLogoutSuccess: '已强制下线',
+    searchPlaceholder: '用户名 / 昵称',
+  },
+  zhTW: {
+    username: '用戶名',
+    nickname: '暱稱',
+    device: '設備',
+    loginTime: '登入時間',
+    forceLogout: '強制下線',
+    forceLogoutConfirm: '確定要強制用戶「{name}」下線嗎？',
+    forceLogoutSuccess: '已強制下線',
+    searchPlaceholder: '用戶名 / 暱稱',
+  },
+  en: {
+    username: 'Username',
+    nickname: 'Nickname',
+    device: 'Device',
+    loginTime: 'Login Time',
+    forceLogout: 'Force Logout',
+    forceLogoutConfirm: 'Are you sure you want to force "{name}" offline?',
+    forceLogoutSuccess: 'Forced offline',
+    searchPlaceholder: 'Username / Nickname',
+  },
+}

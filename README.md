@@ -16,15 +16,15 @@
 ## 快速開始（後端）
 
 ```bash
-# 默認 local profile：H2 內存庫，零外部依賴啟動
+# 默認 local profile：H2 內存庫 + 內存會話，零外部依賴啟動
 cd nova-server-admin
-mvn -pl .. -am package -DskipTests   # 或直接在根目錄 mvn package -DskipTests
+mvn package -DskipTests
 mvn spring-boot:run                  # 端口 8080
 ```
 
 - 默認賬號：`admin`，初始密碼見 `application.yml` 的 `nova.init.admin-password`
 - 介面文檔：<http://localhost:8080/swagger-ui.html>
-- 切換 MySQL：`--spring.profiles.active=mysql`（連接參數見 `application-mysql.yml`，可通過 `MYSQL_*` 環境變量覆蓋；建表與種子數據由 Flyway 自動執行）
+- 切換 MySQL + Redis：`--spring.profiles.active=mysql`（先複製 `application-mysql.example.yml` 為同目錄 `application-mysql.yml` 並填入你的連接信息，該文件已 gitignore 不會入庫；也可通過 `MYSQL_*` / `REDIS_*` 環境變量注入。建表與種子數據由 Flyway 自動執行，會話/驗證碼/在線用戶存 Redis）
 
 ## 快速開始（前端）
 

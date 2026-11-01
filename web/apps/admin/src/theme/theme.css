@@ -1,0 +1,287 @@
+/* =====================================================================
+ * NovaBoot 主題系統
+ * data-theme: light（默認亮色）/ dark（暗色）/ glass（液態玻璃）/ manga（漫畫）
+ * 覆蓋 Element Plus 的 CSS 變量；dark 主題基於 EP 官方 html.dark 變量再微調
+ * ===================================================================== */
+
+/* ------------------------------ 公共 ------------------------------ */
+
+/* 主題切換下拉中的當前項高亮 */
+.el-dropdown-menu__item.is-current {
+  background-color: var(--el-color-primary-light-9);
+  color: var(--el-color-primary);
+  font-weight: 600;
+}
+
+html,
+body {
+  min-height: 100%;
+}
+
+html,
+body,
+.el-card,
+.el-table,
+.el-dialog,
+.layout-aside,
+.layout-header,
+.layout-main {
+  transition:
+    background-color 0.25s ease,
+    border-color 0.25s ease,
+    color 0.25s ease,
+    box-shadow 0.25s ease;
+}
+
+/* ------------------------------ 亮色 ------------------------------ */
+
+:root,
+html[data-theme='light'] {
+  color-scheme: light;
+  /* 柔和冷灰底色，久看不刺眼 */
+  --el-bg-color-page: #f3f5f9;
+  --el-border-radius-base: 6px;
+  /* 登入頁漸變 */
+  --nova-login-bg: linear-gradient(135deg, #dbeafe 0%, #ede9fe 100%);
+}
+
+/* ------------------------------ 暗色 ------------------------------ */
+/* 基於 Element Plus 官方 html.dark 變量（main.ts 引入 dark/css-vars.css），此處微調 */
+
+html[data-theme='dark'] {
+  /* 藍調深灰而非純黑，降低對比疲勞 */
+  --el-bg-color: #16181d;
+  --el-bg-color-overlay: #1c2027;
+  --el-bg-color-page: #0e1014;
+  --el-border-color: #2c313c;
+  --el-border-color-light: #232833;
+  --el-border-color-lighter: #1f232b;
+  --el-border-color-extra-light: #1a1d24;
+  --el-fill-color-blank: #16181d;
+  --el-fill-color-light: #1e222b;
+  --el-fill-color-lighter: #1a1e26;
+  --el-text-color-primary: #e7e9ee;
+  --el-text-color-regular: #a8aebc;
+  --el-text-color-secondary: #7d8494;
+  --el-color-primary: #5f92f5;
+  --el-color-primary-light-3: #82aaf8;
+  --el-color-primary-light-5: #a5c1fa;
+  --el-color-primary-light-7: #c8d8fc;
+  --el-color-primary-light-8: #dae5fd;
+  --el-color-primary-light-9: #21283a;
+  --el-color-primary-dark-2: #4c75c4;
+  --nova-login-bg:
+    radial-gradient(1000px 700px at 75% 15%, rgba(63, 81, 140, 0.5), transparent 60%),
+    #0e1014;
+}
+
+/* EP 在 .el-table 元素級重聲明表格變量，需同級覆蓋（html 級會被吃掉） */
+html[data-theme='dark'] .el-table {
+  --el-table-header-bg-color: #1b1f27;
+  --el-table-row-hover-bg-color: #1e232c;
+  --el-table-border-color: #262b35;
+}
+
+/* --------------------------- 液態玻璃 ---------------------------- */
+/* 蘋果 Liquid Glass 風格：彩色極光背景 + 半透明磨砂面板 + 高光邊緣 */
+
+html[data-theme='glass'] {
+  color-scheme: light;
+  --el-bg-color: rgba(255, 255, 255, 0.55);
+  --el-bg-color-overlay: rgba(255, 255, 255, 0.66);
+  --el-bg-color-page: transparent;
+  --el-border-color: rgba(100, 116, 139, 0.28);
+  --el-border-color-light: rgba(100, 116, 139, 0.22);
+  --el-border-color-lighter: rgba(100, 116, 139, 0.16);
+  --el-border-color-extra-light: rgba(100, 116, 139, 0.12);
+  --el-fill-color-blank: rgba(255, 255, 255, 0.42);
+  --el-fill-color-light: rgba(255, 255, 255, 0.4);
+  --el-fill-color-lighter: rgba(255, 255, 255, 0.32);
+  --el-fill-color-extra-light: rgba(255, 255, 255, 0.26);
+  --el-fill-color-dark: rgba(148, 163, 184, 0.2);
+  --el-text-color-primary: #1e293b;
+  --el-text-color-regular: #475569;
+  --el-text-color-secondary: #64748b;
+  --el-border-radius-base: 8px;
+  --el-menu-hover-bg-color: rgba(255, 255, 255, 0.55);
+  --el-card-border-color: rgba(255, 255, 255, 0.55);
+  --el-card-border-radius: 16px;
+  --nova-login-bg: transparent;
+}
+
+/* 磨砂表格：EP 在 .el-table 元素級聲明變量，需同級覆蓋 */
+html[data-theme='glass'] .el-table {
+  --el-table-bg-color: rgba(255, 255, 255, 0.32);
+  --el-table-tr-bg-color: rgba(255, 255, 255, 0.28);
+  --el-table-header-bg-color: rgba(255, 255, 255, 0.5);
+  --el-table-row-hover-bg-color: rgba(255, 255, 255, 0.5);
+  --el-table-border-color: rgba(100, 116, 139, 0.22);
+}
+
+html[data-theme='glass'] .el-card {
+  --el-card-bg-color: rgba(255, 255, 255, 0.42);
+  --el-card-border-color: rgba(255, 255, 255, 0.55);
+}
+
+/* 極光背景（固定不隨滾動） */
+html[data-theme='glass'] body {
+  background:
+    radial-gradient(1200px 800px at 8% -10%, rgba(99, 102, 241, 0.32), transparent 60%),
+    radial-gradient(1000px 700px at 100% 0%, rgba(236, 72, 153, 0.24), transparent 55%),
+    radial-gradient(900px 900px at 50% 120%, rgba(56, 189, 248, 0.28), transparent 60%),
+    linear-gradient(180deg, #eef2ff 0%, #fdf2f8 100%);
+  background-attachment: fixed;
+}
+
+/* 磨砂玻璃面板：高斯模糊 + 飽和度提升 + 白色高光邊 */
+html[data-theme='glass'] .el-card,
+html[data-theme='glass'] .el-table,
+html[data-theme='glass'] .el-dialog,
+html[data-theme='glass'] .el-drawer,
+html[data-theme='glass'] .el-message,
+html[data-theme='glass'] .el-message-box,
+html[data-theme='glass'] .el-popper.is-light,
+html[data-theme='glass'] .layout-aside,
+html[data-theme='glass'] .layout-header {
+  backdrop-filter: blur(22px) saturate(170%);
+  -webkit-backdrop-filter: blur(22px) saturate(170%);
+  border-color: rgba(255, 255, 255, 0.55);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.65),
+    0 8px 28px rgba(31, 38, 135, 0.1);
+}
+
+html[data-theme='glass'] .sidebar-menu {
+  background: transparent;
+}
+
+/* ------------------------------ 漫畫 ------------------------------ */
+/* 粗黑描邊 + 硬陰影 + 網點紙 + 高飽和點綴色 */
+
+html[data-theme='manga'] {
+  color-scheme: light;
+  --el-color-primary: #ff4d6d;
+  --el-color-primary-light-3: #ff728c;
+  --el-color-primary-light-5: #ff97ad;
+  --el-color-primary-light-7: #ffbbc9;
+  --el-color-primary-light-8: #ffccd7;
+  --el-color-primary-light-9: #ffe5eb;
+  --el-color-primary-dark-2: #e64460;
+  --el-bg-color: #fffdf7;
+  --el-bg-color-overlay: #fffdf7;
+  --el-bg-color-page: #f4efe3;
+  --el-border-color: #1f1f24;
+  --el-border-color-light: #46464d;
+  --el-border-color-lighter: #cfc8b8;
+  --el-border-color-extra-light: #e9e3d4;
+  --el-fill-color-blank: #fffdf7;
+  --el-fill-color-light: #f4efe3;
+  --el-fill-color-lighter: #f8f4ea;
+  --el-fill-color-extra-light: #fbf8f0;
+  --el-fill-color-dark: #e8e1cf;
+  --el-text-color-primary: #1f1f24;
+  --el-text-color-regular: #3c3c43;
+  --el-text-color-secondary: #716f66;
+  --el-text-color-placeholder: #a8a294;
+  --el-border-radius-base: 8px;
+  --el-menu-hover-bg-color: rgba(255, 224, 102, 0.55);
+  --el-card-border-color: #1f1f24;
+  --el-card-border-width: 2px;
+  --el-card-border-radius: 10px;
+  --el-mask-color: rgba(31, 31, 36, 0.55);
+  --nova-login-bg:
+    radial-gradient(rgba(31, 31, 36, 0.07) 1.2px, transparent 1.3px),
+    #f4efe3;
+}
+
+/* 黑底白字表頭：EP 在 .el-table 元素級聲明變量，需同級覆蓋 */
+html[data-theme='manga'] .el-table {
+  --el-table-bg-color: #fffdf7;
+  --el-table-tr-bg-color: #fffdf7;
+  --el-table-header-bg-color: #1f1f24;
+  --el-table-header-text-color: #fffdf7;
+  --el-table-row-hover-bg-color: #fff3bf;
+  --el-table-border-color: #1f1f24;
+}
+
+html[data-theme='manga'] .el-card {
+  --el-card-bg-color: #fffdf7;
+  --el-card-border-color: #1f1f24;
+}
+
+html[data-theme='manga'] body {
+  background-color: #f4efe3;
+  background-image: radial-gradient(rgba(31, 31, 36, 0.06) 1.2px, transparent 1.3px);
+  background-size: 16px 16px;
+}
+
+/* 粗描邊 + 硬陰影的面板 */
+html[data-theme='manga'] .el-card,
+html[data-theme='manga'] .el-dialog,
+html[data-theme='manga'] .el-message-box,
+html[data-theme='manga'] .el-message {
+  border: 2px solid #1f1f24;
+  border-radius: 10px;
+  box-shadow: 5px 5px 0 #1f1f24;
+}
+
+html[data-theme='manga'] .el-popper.is-light {
+  border: 2px solid #1f1f24;
+  box-shadow: 3px 3px 0 #1f1f24;
+}
+
+/* 按鈕：硬陰影 + 按下位移 */
+html[data-theme='manga'] .el-button {
+  border: 2px solid #1f1f24;
+  border-radius: 8px;
+  font-weight: 600;
+  box-shadow: 3px 3px 0 #1f1f24;
+  transition:
+    transform 0.1s ease,
+    box-shadow 0.1s ease,
+    background-color 0.2s ease,
+    color 0.2s ease;
+}
+
+html[data-theme='manga'] .el-button:not(.is-link):not(.is-text):active {
+  transform: translate(2px, 2px);
+  box-shadow: 1px 1px 0 #1f1f24;
+}
+
+html[data-theme='manga'] .el-button.is-link,
+html[data-theme='manga'] .el-button.is-text {
+  border: none;
+  box-shadow: none;
+}
+
+/* 側邊欄與頂欄：漫畫分格感 */
+html[data-theme='manga'] .layout-aside {
+  border-right: 2px solid #1f1f24;
+}
+
+html[data-theme='manga'] .layout-header {
+  border-bottom: 2px solid #1f1f24;
+}
+
+html[data-theme='manga'] .layout-logo {
+  font-weight: 900;
+  letter-spacing: 2px;
+}
+
+html[data-theme='manga'] .sidebar-menu {
+  background: transparent;
+}
+
+/* 激活選單項：漫畫高亮藥丸 */
+html[data-theme='manga'] .el-menu-item.is-active {
+  background: var(--el-color-primary);
+  color: #fffdf7;
+  border: 2px solid #1f1f24;
+  border-radius: 8px;
+  box-shadow: 3px 3px 0 #1f1f24;
+}
+
+html[data-theme='manga'] .login-title {
+  font-weight: 900;
+  letter-spacing: 2px;
+}

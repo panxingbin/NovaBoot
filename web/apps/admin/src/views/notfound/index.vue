@@ -1,14 +1,18 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 
+const { t } = useI18n()
 const router = useRouter()
 </script>
 
 <template>
   <div class="notfound-page">
-    <el-result icon="warning" title="404" sub-title="抱歉，您訪問的頁面不存在">
+    <el-result icon="warning" :title="t('notfound.code')" :sub-title="t('notfound.description')">
       <template #extra>
-        <el-button type="primary" @click="router.replace('/')">返回首頁</el-button>
+        <el-button type="primary" @click="router.replace('/')">
+          {{ t('notfound.backHome') }}
+        </el-button>
       </template>
     </el-result>
   </div>

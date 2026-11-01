@@ -2,6 +2,7 @@ package com.novaboot.module.system.service;
 
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.baomidou.mybatisplus.extension.toolkit.Db;
 import com.novaboot.common.core.domain.PageResult;
 import com.novaboot.common.exception.BusinessException;
 import com.novaboot.module.system.dto.RoleBody;
@@ -11,6 +12,7 @@ import com.novaboot.module.system.entity.SysRole;
 import com.novaboot.module.system.entity.SysRoleDept;
 import com.novaboot.module.system.entity.SysRoleMenu;
 import com.novaboot.module.system.entity.SysUserRole;
+import com.novaboot.module.system.enums.DataScopeType;
 import com.novaboot.module.system.mapper.SysRoleDeptMapper;
 import com.novaboot.module.system.mapper.SysRoleMapper;
 import com.novaboot.module.system.mapper.SysRoleMenuMapper;
@@ -101,12 +103,13 @@ public class SysRoleService {
         if (menuIds == null || menuIds.isEmpty()) {
             return;
         }
-        for (Long menuId : menuIds) {
+        List<SysRoleMenu> relations = menuIds.stream().map(menuId -> {
             SysRoleMenu roleMenu = new SysRoleMenu();
             roleMenu.setRoleId(roleId);
             roleMenu.setMenuId(menuId);
-            sysRoleMenuMapper.insert(roleMenu);
-        }
+            return roleMenu;
+        }).toList();
+        Db.saveBatch(relations);
     }
 
     @Transactional
@@ -119,12 +122,13 @@ public class SysRoleService {
         if (deptIds == null || deptIds.isEmpty()) {
             return;
         }
-        for (Long deptId : deptIds) {
+        List<SysRoleDept> relations = deptIds.stream().map(deptId -> {
             SysRoleDept roleDept = new SysRoleDept();
             roleDept.setRoleId(roleId);
             roleDept.setDeptId(deptId);
-            sysRoleDeptMapper.insert(roleDept);
-        }
+            return roleDept;
+        }).toList();
+        Db.saveBatch(relations);
     }
 
     private void checkCodeUnique(String code, Long excludeId) {
@@ -142,7 +146,7 @@ public class SysRoleService {
         role.setCode(body.getCode());
         role.setSortNo(body.getSortNo() == null ? 0 : body.getSortNo());
         role.setStatus(body.getStatus());
-        role.setDataScope(body.getDataScope() == null ? 1 : body.getDataScope());
+        role.setDataScope(body.getDataScope() == null ? DataScopeType.ALL.getValue() : body.getDataScope());
         role.setRemark(body.getRemark());
     }
 

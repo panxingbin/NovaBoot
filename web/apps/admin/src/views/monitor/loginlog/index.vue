@@ -1,9 +1,12 @@
 <script setup lang="ts">
 import { onMounted, reactive, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { Refresh, Search } from '@element-plus/icons-vue'
 import { pageLoginLogs } from '@/api/monitor'
 import type { LoginLogVO } from '@/api/types'
 import { formatDateTime } from '@/utils/format'
+
+const { t } = useI18n()
 
 const loading = ref(false)
 const total = ref(0)
@@ -58,7 +61,7 @@ onMounted(() => {
       <el-input
         v-model="query.username"
         class="search-input"
-        placeholder="用戶名"
+        :placeholder="t('loginlog.username')"
         clearable
         @keyup.enter="handleSearch"
         @clear="handleSearch"
@@ -66,31 +69,33 @@ onMounted(() => {
       <el-select
         v-model="query.status"
         class="status-select"
-        placeholder="狀態"
+        :placeholder="t('common.status')"
         clearable
         @change="handleSearch"
       >
-        <el-option label="成功" :value="0" />
-        <el-option label="失敗" :value="1" />
+        <el-option :label="t('loginlog.statusSuccess')" :value="0" />
+        <el-option :label="t('loginlog.statusFail')" :value="1" />
       </el-select>
-      <el-button type="primary" :icon="Search" @click="handleSearch">搜索</el-button>
-      <el-button :icon="Refresh" @click="handleReset">重置</el-button>
+      <el-button type="primary" :icon="Search" @click="handleSearch">
+        {{ t('common.search') }}
+      </el-button>
+      <el-button :icon="Refresh" @click="handleReset">{{ t('common.reset') }}</el-button>
     </div>
 
     <el-table v-loading="loading" :data="records" stripe>
-      <el-table-column prop="username" label="用戶名" min-width="130" />
-      <el-table-column prop="ip" label="IP" min-width="140" />
-      <el-table-column label="狀態" width="90" align="center">
+      <el-table-column prop="username" :label="t('loginlog.username')" min-width="130" />
+      <el-table-column prop="ip" :label="t('loginlog.ip')" min-width="140" />
+      <el-table-column :label="t('common.status')" width="90" align="center">
         <template #default="{ row }">
           <el-tag :type="row.status === 0 ? 'success' : 'danger'" size="small">
-            {{ row.status === 0 ? '成功' : '失敗' }}
+            {{ row.status === 0 ? t('loginlog.statusSuccess') : t('loginlog.statusFail') }}
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column label="消息" min-width="180" show-overflow-tooltip>
+      <el-table-column :label="t('loginlog.msg')" min-width="180" show-overflow-tooltip>
         <template #default="{ row }">{{ row.msg || '-' }}</template>
       </el-table-column>
-      <el-table-column label="時間" width="180">
+      <el-table-column :label="t('loginlog.time')" width="180">
         <template #default="{ row }">{{ formatDateTime(row.createdAt) }}</template>
       </el-table-column>
     </el-table>

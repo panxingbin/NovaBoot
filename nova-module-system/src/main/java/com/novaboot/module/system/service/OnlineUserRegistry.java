@@ -1,32 +1,24 @@
 package com.novaboot.module.system.service;
 
-import org.springframework.stereotype.Component;
-
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-
 /**
- * 在線用戶註冊表：登入時登記 token → 用戶，單實例內存實現。
+ * 在線用戶註冊表：登入時登記 token → 用戶。
+ * 默認內存實現（單實例）；nova.redis.enabled=true 時由 Redis 實現承接，跨實例共享。
  * 過期/被強退的 token 由查詢側通過 getLoginIdByToken 校驗自動剔除。
- * M2 接入 Redis 後替換為共享註冊表即可支持水平擴展。
  */
-@Component
-public class OnlineUserRegistry {
+public interface OnlineUserRegistry {
 
-    public record OnlineEntry(long loginId, long loginTime) {
-    }
+    void register(String token, long loginId);
 
-    private final Map<String, OnlineEntry> entries = new ConcurrentHashMap<>();
+    void remove(String token);
 
-    public void register(String token, long loginId) {
-        entries.put(token, new OnlineEntry(loginId, System.currentTimeMillis()));
-    }
+    /**
+     * token → 登入信息的只讀快照
+     */
+    java.util.Map<String, OnlineEntry> snapshot();
 
-    public void remove(String token) {
-        entries.remove(token);
-    }
-
-    public Map<String, OnlineEntry> snapshot() {
-        return Map.copyOf(entries);
+    /**
+     * 單條在線記錄
+     */
+    record OnlineEntry(long loginId, long loginTime) {
     }
 }

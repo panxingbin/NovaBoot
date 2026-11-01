@@ -37,6 +37,17 @@
             <groupId>cn.dev33</groupId>
             <artifactId>sa-token-spring-boot4-starter</artifactId>
         </dependency>
+        <!-- Sa-Token 會話的 Redis 存儲（local profile 通過 spring.autoconfigure.exclude 退回內存 DAO） -->
+        <dependency>
+            <groupId>cn.dev33</groupId>
+            <artifactId>sa-token-redis-template</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+        <!-- 驗證碼/在線用戶的 Redis 存儲實現；未啟用 nova.redis.enabled 時用內存實現 -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-redis</artifactId>
+        </dependency>
         <dependency>
             <groupId>com.baomidou</groupId>
             <artifactId>mybatis-plus-spring-boot4-starter</artifactId>

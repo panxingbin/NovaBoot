@@ -3,8 +3,11 @@ import { onMounted, reactive, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
 import { Plus, Refresh, Search } from '@element-plus/icons-vue'
+import { useI18n } from 'vue-i18n'
 import { createConfig, deleteConfig, pageConfigs, updateConfig } from '@/api/system'
 import type { ConfigVO } from '@/api/types'
+
+const { t } = useI18n()
 
 const loading = ref(false)
 const total = ref(0)
@@ -57,9 +60,9 @@ const form = reactive({
 })
 
 const rules: FormRules = {
-  name: [{ required: true, message: '請輸入參數名稱', trigger: 'blur' }],
-  key: [{ required: true, message: '請輸入參數鍵', trigger: 'blur' }],
-  value: [{ required: true, message: '請輸入參數值', trigger: 'blur' }],
+  name: [{ required: true, message: () => t('config.nameRequired'), trigger: 'blur' }],
+  key: [{ required: true, message: () => t('config.keyRequired'), trigger: 'blur' }],
+  value: [{ required: true, message: () => t('config.valueRequired'), trigger: 'blur' }],
 }
 
 function openCreate(): void {
@@ -95,10 +98,10 @@ async function handleSubmit(): Promise<void> {
   }
   if (isEdit.value) {
     await updateConfig(editingId.value, payload)
-    ElMessage.success('修改成功')
+    ElMessage.success(t('common.saveSuccess'))
   } else {
     await createConfig(payload)
-    ElMessage.success('新增成功')
+    ElMessage.success(t('common.saveSuccess'))
   }
   dialogVisible.value = false
   void fetchList()
@@ -108,16 +111,16 @@ async function handleSubmit(): Promise<void> {
 
 async function handleDelete(row: ConfigVO): Promise<void> {
   try {
-    await ElMessageBox.confirm(`確定要刪除參數「${row.name}」嗎？`, '警告', {
-      confirmButtonText: '確定',
-      cancelButtonText: '取消',
+    await ElMessageBox.confirm(t('config.deleteConfirm', { name: row.name }), t('common.warning'), {
+      confirmButtonText: t('common.confirm'),
+      cancelButtonText: t('common.cancel'),
       type: 'warning',
     })
   } catch {
     return
   }
   await deleteConfig(row.id)
-  ElMessage.success('刪除成功')
+  ElMessage.success(t('common.deleteSuccess'))
   if (records.value.length === 1 && query.pageNum > 1) {
     query.pageNum -= 1
   }
@@ -135,32 +138,32 @@ onMounted(() => {
       <el-input
         v-model="query.keyword"
         class="search-input"
-        placeholder="名稱 / 鍵"
+        :placeholder="t('config.searchPlaceholder')"
         clearable
         @keyup.enter="handleSearch"
         @clear="handleSearch"
       />
-      <el-button type="primary" :icon="Search" @click="handleSearch">搜索</el-button>
-      <el-button :icon="Refresh" @click="handleReset">重置</el-button>
+      <el-button type="primary" :icon="Search" @click="handleSearch">{{ t('common.search') }}</el-button>
+      <el-button :icon="Refresh" @click="handleReset">{{ t('common.reset') }}</el-button>
       <el-button v-permission="'system:config:add'" type="primary" :icon="Plus" @click="openCreate">
-        新增參數
+        {{ t('config.addConfig') }}
       </el-button>
     </div>
 
     <el-table v-loading="loading" :data="records" stripe>
-      <el-table-column prop="name" label="名稱" min-width="150" />
-      <el-table-column prop="key" label="鍵" min-width="160" />
-      <el-table-column prop="value" label="值" min-width="150" show-overflow-tooltip />
-      <el-table-column label="內置" width="90" align="center">
+      <el-table-column prop="name" :label="t('config.name')" min-width="150" />
+      <el-table-column prop="key" :label="t('config.key')" min-width="160" />
+      <el-table-column prop="value" :label="t('config.value')" min-width="150" show-overflow-tooltip />
+      <el-table-column :label="t('config.builtin')" width="90" align="center">
         <template #default="{ row }">
-          <el-tag v-if="row.builtin" type="warning">內置</el-tag>
-          <el-tag v-else type="info">自定義</el-tag>
+          <el-tag v-if="row.builtin" type="warning">{{ t('config.builtin') }}</el-tag>
+          <el-tag v-else type="info">{{ t('config.custom') }}</el-tag>
         </template>
       </el-table-column>
-      <el-table-column label="備註" min-width="140">
+      <el-table-column :label="t('common.remark')" min-width="140">
         <template #default="{ row }">{{ row.remark || '-' }}</template>
       </el-table-column>
-      <el-table-column label="操作" width="150" fixed="right">
+      <el-table-column :label="t('common.operation')" width="150" fixed="right">
         <template #default="{ row }">
           <el-button
             v-permission="'system:config:edit'"
@@ -168,7 +171,7 @@ onMounted(() => {
             type="primary"
             @click="openEdit(row as ConfigVO)"
           >
-            修改
+            {{ t('common.edit') }}
           </el-button>
           <el-button
             v-permission="'system:config:delete'"
@@ -176,7 +179,7 @@ onMounted(() => {
             type="danger"
             @click="handleDelete(row as ConfigVO)"
           >
-            刪除
+            {{ t('common.delete') }}
           </el-button>
         </template>
       </el-table-column>
@@ -196,27 +199,27 @@ onMounted(() => {
 
     <el-dialog
       v-model="dialogVisible"
-      :title="isEdit ? '修改參數' : '新增參數'"
+      :title="isEdit ? t('config.editConfig') : t('config.addConfig')"
       width="480px"
       destroy-on-close
     >
       <el-form ref="formRef" :model="form" :rules="rules" label-width="90px">
-        <el-form-item label="名稱" prop="name">
-          <el-input v-model="form.name" placeholder="請輸入參數名稱" />
+        <el-form-item :label="t('config.name')" prop="name">
+          <el-input v-model="form.name" :placeholder="t('config.nameRequired')" />
         </el-form-item>
-        <el-form-item label="鍵" prop="key">
-          <el-input v-model="form.key" placeholder="請輸入參數鍵，如 sys.index.skin" />
+        <el-form-item :label="t('config.key')" prop="key">
+          <el-input v-model="form.key" :placeholder="t('config.keyPlaceholder')" />
         </el-form-item>
-        <el-form-item label="值" prop="value">
-          <el-input v-model="form.value" placeholder="請輸入參數值" />
+        <el-form-item :label="t('config.value')" prop="value">
+          <el-input v-model="form.value" :placeholder="t('config.valueRequired')" />
         </el-form-item>
-        <el-form-item label="備註" prop="remark">
-          <el-input v-model="form.remark" type="textarea" :rows="2" placeholder="請輸入備註" />
+        <el-form-item :label="t('common.remark')" prop="remark">
+          <el-input v-model="form.remark" type="textarea" :rows="2" :placeholder="t('config.remarkPlaceholder')" />
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="dialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="handleSubmit">確定</el-button>
+        <el-button @click="dialogVisible = false">{{ t('common.cancel') }}</el-button>
+        <el-button type="primary" @click="handleSubmit">{{ t('common.confirm') }}</el-button>
       </template>
     </el-dialog>
   </el-card>

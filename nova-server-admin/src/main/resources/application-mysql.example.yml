@@ -1,0 +1,21 @@
+spring:
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    # 複製本文件為同目錄 application-mysql.yml（已 gitignore）並填入你的連接信息；
+    # 也可不改文件，直接用 MYSQL_* 環境變量覆蓋
+    url: jdbc:mysql://${MYSQL_HOST:localhost}:${MYSQL_PORT:3306}/${MYSQL_DB:nova_boot}?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
+    username: ${MYSQL_USERNAME:root}
+    password: ${MYSQL_PASSWORD:}
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      # 如 Redis 設有密碼，取消下行註釋並配置
+      # password: ${REDIS_PASSWORD:}
+  flyway:
+    locations: classpath:db/migration/mysql
+
+# MySQL 環境啟用 Redis 會話/驗證碼/在線用戶（local profile 保持內存實現，零外部依賴）
+nova:
+  redis:
+    enabled: true

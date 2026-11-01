@@ -2,7 +2,7 @@ import { get, post } from './http'
 import type { CaptchaVO, LoginBody, LoginVO, ProfileVO } from './types'
 
 export function getCaptcha(): Promise<CaptchaVO> {
-  return post<CaptchaVO>('/api/auth/captcha')
+  return get<CaptchaVO>('/api/auth/captcha')
 }
 
 export function login(body: LoginBody): Promise<LoginVO> {

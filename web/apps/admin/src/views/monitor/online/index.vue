@@ -1,10 +1,13 @@
 <script setup lang="ts">
 import { onMounted, reactive, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Refresh, Search } from '@element-plus/icons-vue'
 import { forceLogout, pageOnlineUsers } from '@/api/monitor'
 import type { OnlineUserVO } from '@/api/types'
 import { formatDateTime } from '@/utils/format'
+
+const { t } = useI18n()
 
 const loading = ref(false)
 const total = ref(0)
@@ -44,16 +47,20 @@ function handleSizeChange(): void {
 
 async function handleForceLogout(row: OnlineUserVO): Promise<void> {
   try {
-    await ElMessageBox.confirm(`確定要強制用戶「${row.nickname || row.username}」下線嗎？`, '警告', {
-      confirmButtonText: '確定',
-      cancelButtonText: '取消',
-      type: 'warning',
-    })
+    await ElMessageBox.confirm(
+      t('online.forceLogoutConfirm', { name: row.nickname || row.username }),
+      t('common.warning'),
+      {
+        confirmButtonText: t('common.confirm'),
+        cancelButtonText: t('common.cancel'),
+        type: 'warning',
+      },
+    )
   } catch {
     return
   }
   await forceLogout(row.token)
-  ElMessage.success('已強制下線')
+  ElMessage.success(t('online.forceLogoutSuccess'))
   if (records.value.length === 1 && query.pageNum > 1) {
     query.pageNum -= 1
   }
@@ -71,30 +78,32 @@ onMounted(() => {
       <el-input
         v-model="query.keyword"
         class="search-input"
-        placeholder="用戶名 / 暱稱"
+        :placeholder="t('online.searchPlaceholder')"
         clearable
         @keyup.enter="handleSearch"
         @clear="handleSearch"
       />
-      <el-button type="primary" :icon="Search" @click="handleSearch">搜索</el-button>
-      <el-button :icon="Refresh" @click="handleReset">重置</el-button>
+      <el-button type="primary" :icon="Search" @click="handleSearch">
+        {{ t('common.search') }}
+      </el-button>
+      <el-button :icon="Refresh" @click="handleReset">{{ t('common.reset') }}</el-button>
     </div>
 
     <el-table v-loading="loading" :data="records" stripe>
-      <el-table-column prop="username" label="用戶名" min-width="120" />
-      <el-table-column prop="nickname" label="暱稱" min-width="120">
+      <el-table-column prop="username" :label="t('online.username')" min-width="120" />
+      <el-table-column prop="nickname" :label="t('online.nickname')" min-width="120">
         <template #default="{ row }">{{ row.nickname || '-' }}</template>
       </el-table-column>
-      <el-table-column prop="device" label="設備" min-width="140">
+      <el-table-column prop="device" :label="t('online.device')" min-width="140">
         <template #default="{ row }">{{ row.device || '-' }}</template>
       </el-table-column>
       <el-table-column label="Token" min-width="110">
         <template #default="{ row }">{{ row.token ? row.token.slice(0, 8) : '-' }}</template>
       </el-table-column>
-      <el-table-column label="登入時間" width="180">
+      <el-table-column :label="t('online.loginTime')" width="180">
         <template #default="{ row }">{{ formatDateTime(row.loginTime) }}</template>
       </el-table-column>
-      <el-table-column label="操作" width="110" fixed="right">
+      <el-table-column :label="t('common.operation')" width="110" fixed="right">
         <template #default="{ row }">
           <el-button
             v-permission="'monitor:online:forceLogout'"
@@ -102,7 +111,7 @@ onMounted(() => {
             type="danger"
             @click="handleForceLogout(row as OnlineUserVO)"
           >
-            強制下線
+            {{ t('online.forceLogout') }}
           </el-button>
         </template>
       </el-table-column>

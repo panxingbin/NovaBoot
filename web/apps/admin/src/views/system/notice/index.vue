@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { onMounted, reactive, ref } from 'vue'
+import { computed, onMounted, reactive, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
 import { Plus, Refresh, Search } from '@element-plus/icons-vue'
@@ -7,13 +8,17 @@ import { createNotice, deleteNotice, getNotice, pageNotices, updateNotice } from
 import type { NoticeVO } from '@/api/types'
 import { formatDateTime } from '@/utils/format'
 
+const { t } = useI18n()
+
 const loading = ref(false)
 const total = ref(0)
 const records = ref<NoticeVO[]>([])
 const query = reactive({ pageNum: 1, pageSize: 10, keyword: '' })
 
 function noticeTypeMeta(type: number): { label: string; tag: 'primary' | 'warning' } {
-  return type === 2 ? { label: '公告', tag: 'warning' } : { label: '通知', tag: 'primary' }
+  return type === 2
+    ? { label: t('notice.typeAnnouncement'), tag: 'warning' }
+    : { label: t('notice.typeNotice'), tag: 'primary' }
 }
 
 async function fetchList(): Promise<void> {
@@ -72,10 +77,10 @@ const form = reactive({
   remark: '',
 })
 
-const rules: FormRules = {
-  title: [{ required: true, message: '請輸入公告標題', trigger: 'blur' }],
-  content: [{ required: true, message: '請輸入公告內容', trigger: 'blur' }],
-}
+const rules = computed<FormRules>(() => ({
+  title: [{ required: true, message: t('notice.titleRequired'), trigger: 'blur' }],
+  content: [{ required: true, message: t('notice.contentRequired'), trigger: 'blur' }],
+}))
 
 function openCreate(): void {
   isEdit.value = false
@@ -112,10 +117,10 @@ async function handleSubmit(): Promise<void> {
   }
   if (isEdit.value) {
     await updateNotice(editingId.value, payload)
-    ElMessage.success('修改成功')
+    ElMessage.success(t('notice.updateSuccess'))
   } else {
     await createNotice(payload)
-    ElMessage.success('新增成功')
+    ElMessage.success(t('notice.createSuccess'))
   }
   dialogVisible.value = false
   void fetchList()
@@ -125,16 +130,20 @@ async function handleSubmit(): Promise<void> {
 
 async function handleDelete(row: NoticeVO): Promise<void> {
   try {
-    await ElMessageBox.confirm(`確定要刪除公告「${row.title}」嗎？`, '警告', {
-      confirmButtonText: '確定',
-      cancelButtonText: '取消',
-      type: 'warning',
-    })
+    await ElMessageBox.confirm(
+      t('notice.deleteConfirm', { name: row.title }),
+      t('common.warning'),
+      {
+        confirmButtonText: t('common.confirm'),
+        cancelButtonText: t('common.cancel'),
+        type: 'warning',
+      },
+    )
   } catch {
     return
   }
   await deleteNotice(row.id)
-  ElMessage.success('刪除成功')
+  ElMessage.success(t('common.deleteSuccess'))
   if (records.value.length === 1 && query.pageNum > 1) {
     query.pageNum -= 1
   }
@@ -152,45 +161,49 @@ onMounted(() => {
       <el-input
         v-model="query.keyword"
         class="search-input"
-        placeholder="公告標題"
+        :placeholder="t('notice.searchPlaceholder')"
         clearable
         @keyup.enter="handleSearch"
         @clear="handleSearch"
       />
-      <el-button type="primary" :icon="Search" @click="handleSearch">搜索</el-button>
-      <el-button :icon="Refresh" @click="handleReset">重置</el-button>
+      <el-button type="primary" :icon="Search" @click="handleSearch">
+        {{ t('common.search') }}
+      </el-button>
+      <el-button :icon="Refresh" @click="handleReset">{{ t('common.reset') }}</el-button>
       <el-button v-permission="'system:notice:add'" type="primary" :icon="Plus" @click="openCreate">
-        新增公告
+        {{ t('notice.createNotice') }}
       </el-button>
     </div>
 
     <el-table v-loading="loading" :data="records" stripe>
-      <el-table-column prop="title" label="標題" min-width="200" show-overflow-tooltip />
-      <el-table-column label="類型" width="90" align="center">
+      <el-table-column prop="title" :label="t('notice.title')" min-width="200" show-overflow-tooltip />
+      <el-table-column :label="t('notice.type')" width="90" align="center">
         <template #default="{ row }">
           <el-tag :type="noticeTypeMeta(row.type).tag">{{ noticeTypeMeta(row.type).label }}</el-tag>
         </template>
       </el-table-column>
-      <el-table-column label="狀態" width="90" align="center">
+      <el-table-column :label="t('common.status')" width="90" align="center">
         <template #default="{ row }">
           <el-tag :type="row.status === 1 ? 'success' : 'info'">
-            {{ row.status === 1 ? '正常' : '關閉' }}
+            {{ row.status === 1 ? t('notice.statusNormal') : t('notice.statusClosed') }}
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column label="創建時間" width="170">
+      <el-table-column :label="t('common.createdAt')" width="170">
         <template #default="{ row }">{{ formatDateTime(row.createdAt) }}</template>
       </el-table-column>
-      <el-table-column label="操作" width="180" fixed="right">
+      <el-table-column :label="t('common.operation')" width="180" fixed="right">
         <template #default="{ row }">
-          <el-button link type="primary" @click="openDetail(row as NoticeVO)">查看</el-button>
+          <el-button link type="primary" @click="openDetail(row as NoticeVO)">
+            {{ t('notice.view') }}
+          </el-button>
           <el-button
             v-permission="'system:notice:edit'"
             link
             type="primary"
             @click="openEdit(row as NoticeVO)"
           >
-            修改
+            {{ t('common.edit') }}
           </el-button>
           <el-button
             v-permission="'system:notice:delete'"
@@ -198,7 +211,7 @@ onMounted(() => {
             type="danger"
             @click="handleDelete(row as NoticeVO)"
           >
-            刪除
+            {{ t('common.delete') }}
           </el-button>
         </template>
       </el-table-column>
@@ -216,7 +229,7 @@ onMounted(() => {
       />
     </div>
 
-    <el-dialog v-model="detailVisible" :title="detail?.title ?? '公告詳情'" width="560px">
+    <el-dialog v-model="detailVisible" :title="detail?.title ?? t('notice.detailTitle')" width="560px">
       <div v-if="detail" class="notice-detail">
         <div class="notice-meta">
           <el-tag :type="noticeTypeMeta(detail.type).tag">
@@ -230,38 +243,43 @@ onMounted(() => {
 
     <el-dialog
       v-model="dialogVisible"
-      :title="isEdit ? '修改公告' : '新增公告'"
+      :title="isEdit ? t('notice.editNotice') : t('notice.createNotice')"
       width="600px"
       destroy-on-close
     >
       <el-form ref="formRef" :model="form" :rules="rules" label-width="90px">
-        <el-form-item label="標題" prop="title">
-          <el-input v-model="form.title" placeholder="請輸入公告標題" />
+        <el-form-item :label="t('notice.title')" prop="title">
+          <el-input v-model="form.title" :placeholder="t('notice.titleRequired')" />
         </el-form-item>
-        <el-form-item label="類型" prop="type">
+        <el-form-item :label="t('notice.type')" prop="type">
           <el-radio-group v-model="form.type">
-            <el-radio-button :value="1">通知</el-radio-button>
-            <el-radio-button :value="2">公告</el-radio-button>
+            <el-radio-button :value="1">{{ t('notice.typeNotice') }}</el-radio-button>
+            <el-radio-button :value="2">{{ t('notice.typeAnnouncement') }}</el-radio-button>
           </el-radio-group>
         </el-form-item>
-        <el-form-item label="狀態" prop="status">
+        <el-form-item :label="t('common.status')" prop="status">
           <el-switch v-model="form.status" :active-value="1" :inactive-value="0" />
         </el-form-item>
-        <el-form-item label="內容" prop="content">
+        <el-form-item :label="t('notice.content')" prop="content">
           <el-input
             v-model="form.content"
             type="textarea"
             :rows="6"
-            placeholder="請輸入公告內容"
+            :placeholder="t('notice.contentRequired')"
           />
         </el-form-item>
-        <el-form-item label="備註" prop="remark">
-          <el-input v-model="form.remark" type="textarea" :rows="2" placeholder="請輸入備註" />
+        <el-form-item :label="t('common.remark')" prop="remark">
+          <el-input
+            v-model="form.remark"
+            type="textarea"
+            :rows="2"
+            :placeholder="t('notice.remarkPlaceholder')"
+          />
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="dialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="handleSubmit">確定</el-button>
+        <el-button @click="dialogVisible = false">{{ t('common.cancel') }}</el-button>
+        <el-button type="primary" @click="handleSubmit">{{ t('common.confirm') }}</el-button>
       </template>
     </el-dialog>
   </el-card>
@@ -289,12 +307,12 @@ onMounted(() => {
   margin-bottom: 12px;
 }
 .notice-time {
-  color: #909399;
+  color: var(--el-text-color-secondary);
   font-size: 13px;
 }
 .notice-content {
   white-space: pre-wrap;
   line-height: 1.7;
-  color: #303133;
+  color: var(--el-text-color-primary);
 }
 </style>

@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { nextTick, onMounted, reactive, ref, watch } from 'vue'
+import { computed, nextTick, onMounted, reactive, ref, watch } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import type { FormInstance, FormRules, TreeInstance } from 'element-plus'
+import { useI18n } from 'vue-i18n'
 import { Plus, Refresh, Search } from '@element-plus/icons-vue'
 import {
   assignRoleDepts,
@@ -19,13 +20,15 @@ import type { DeptVO, MenuTreeNode, RoleVO } from '@/api/types'
 import { collectLeafIds } from '@/utils/menu'
 import { formatDateTime } from '@/utils/format'
 
-const dataScopeOptions = [
-  { value: 1, label: '全部' },
-  { value: 2, label: '自訂部門' },
-  { value: 3, label: '本部門' },
-  { value: 4, label: '本部門及以下' },
-  { value: 5, label: '僅本人' },
-]
+const { t } = useI18n()
+
+const dataScopeOptions = computed<Array<{ value: number; label: string }>>(() => [
+  { value: 1, label: t('role.dataScopeAll') },
+  { value: 2, label: t('role.dataScopeCustom') },
+  { value: 3, label: t('role.dataScopeDept') },
+  { value: 4, label: t('role.dataScopeDeptBelow') },
+  { value: 5, label: t('role.dataScopeSelf') },
+])
 
 const loading = ref(false)
 const total = ref(0)
@@ -80,8 +83,8 @@ const form = reactive({
 })
 
 const rules: FormRules = {
-  name: [{ required: true, message: '請輸入角色名稱', trigger: 'blur' }],
-  code: [{ required: true, message: '請輸入角色編碼', trigger: 'blur' }],
+  name: [{ required: true, message: () => t('role.nameRequired'), trigger: 'blur' }],
+  code: [{ required: true, message: () => t('role.codeRequired'), trigger: 'blur' }],
 }
 
 function openCreate(): void {
@@ -141,17 +144,17 @@ async function handleSubmit(): Promise<void> {
     if (payload.dataScope === 2) {
       await assignRoleDepts(editingId.value, collectDeptIds())
     }
-    ElMessage.success('修改成功')
+    ElMessage.success(t('role.updateSuccess'))
   } else {
     const newId = await createRole(payload)
     if (payload.dataScope === 2) {
       if (typeof newId === 'number') {
         await assignRoleDepts(newId, collectDeptIds())
       } else {
-        ElMessage.warning('新增成功；自訂部門範圍請通過「修改」設置具體部門')
+        ElMessage.warning(t('role.createSuccessCustomDeptTip'))
       }
     }
-    ElMessage.success('新增成功')
+    ElMessage.success(t('role.createSuccess'))
   }
   dialogVisible.value = false
   void fetchList()
@@ -170,7 +173,7 @@ async function handleStatusChange(row: RoleVO): Promise<void> {
       dataScope: row.dataScope,
       remark: row.remark ?? undefined,
     })
-    ElMessage.success(row.status === 1 ? '已啟用' : '已停用')
+    ElMessage.success(row.status === 1 ? t('common.enabled') : t('common.disabled'))
   } catch {
     row.status = original
   }
@@ -244,7 +247,7 @@ async function handleAssignSubmit(): Promise<void> {
     ...(tree.getHalfCheckedKeys() as number[]),
   ]
   await assignRoleMenus(assigningRole.value.id, menuIds)
-  ElMessage.success('菜單權限分配成功')
+  ElMessage.success(t('role.assignSuccess'))
   assignDialogVisible.value = false
 }
 
@@ -252,16 +255,16 @@ async function handleAssignSubmit(): Promise<void> {
 
 async function handleDelete(row: RoleVO): Promise<void> {
   try {
-    await ElMessageBox.confirm(`確定要刪除角色「${row.name}」嗎？`, '警告', {
-      confirmButtonText: '確定',
-      cancelButtonText: '取消',
+    await ElMessageBox.confirm(t('role.deleteConfirm', { name: row.name }), t('common.warning'), {
+      confirmButtonText: t('common.confirm'),
+      cancelButtonText: t('common.cancel'),
       type: 'warning',
     })
   } catch {
     return
   }
   await deleteRole(row.id)
-  ElMessage.success('刪除成功')
+  ElMessage.success(t('common.deleteSuccess'))
   if (records.value.length === 1 && query.pageNum > 1) {
     query.pageNum -= 1
   }
@@ -279,23 +282,23 @@ onMounted(() => {
       <el-input
         v-model="query.keyword"
         class="search-input"
-        placeholder="角色名稱 / 編碼"
+        :placeholder="t('role.searchPlaceholder')"
         clearable
         @keyup.enter="handleSearch"
         @clear="handleSearch"
       />
-      <el-button type="primary" :icon="Search" @click="handleSearch">搜索</el-button>
-      <el-button :icon="Refresh" @click="handleReset">重置</el-button>
+      <el-button type="primary" :icon="Search" @click="handleSearch">{{ t('common.search') }}</el-button>
+      <el-button :icon="Refresh" @click="handleReset">{{ t('common.reset') }}</el-button>
       <el-button v-permission="'system:role:add'" type="primary" :icon="Plus" @click="openCreate">
-        新增角色
+        {{ t('role.addRole') }}
       </el-button>
     </div>
 
     <el-table v-loading="loading" :data="records" stripe>
-      <el-table-column prop="name" label="名稱" min-width="120" />
-      <el-table-column prop="code" label="編碼" min-width="120" />
-      <el-table-column prop="sortNo" label="排序" width="70" />
-      <el-table-column label="狀態" width="90">
+      <el-table-column prop="name" :label="t('role.name')" min-width="120" />
+      <el-table-column prop="code" :label="t('role.code')" min-width="120" />
+      <el-table-column prop="sortNo" :label="t('common.sortNo')" width="70" />
+      <el-table-column :label="t('common.status')" width="90">
         <template #default="{ row }">
           <el-switch
             v-permission="'system:role:edit'"
@@ -306,16 +309,16 @@ onMounted(() => {
           />
         </template>
       </el-table-column>
-      <el-table-column label="備註" min-width="140">
+      <el-table-column :label="t('common.remark')" min-width="140">
         <template #default="{ row }">{{ row.remark || '-' }}</template>
       </el-table-column>
-      <el-table-column label="創建時間" width="170">
+      <el-table-column :label="t('common.createdAt')" width="170">
         <template #default="{ row }">{{ formatDateTime(row.createdAt) }}</template>
       </el-table-column>
-      <el-table-column label="操作" width="240" fixed="right">
+      <el-table-column :label="t('common.operation')" width="240" fixed="right">
         <template #default="{ row }">
           <el-button v-permission="'system:role:edit'" link type="primary" @click="openEdit(row as RoleVO)">
-            修改
+            {{ t('common.edit') }}
           </el-button>
           <el-button
             v-permission="'system:role:assign'"
@@ -323,7 +326,7 @@ onMounted(() => {
             type="primary"
             @click="openAssign(row as RoleVO)"
           >
-            分配菜單權限
+            {{ t('role.assignMenus') }}
           </el-button>
           <el-button
             v-permission="'system:role:delete'"
@@ -331,7 +334,7 @@ onMounted(() => {
             type="danger"
             @click="handleDelete(row as RoleVO)"
           >
-            刪除
+            {{ t('common.delete') }}
           </el-button>
         </template>
       </el-table-column>
@@ -351,24 +354,24 @@ onMounted(() => {
 
     <el-dialog
       v-model="dialogVisible"
-      :title="isEdit ? '修改角色' : '新增角色'"
+      :title="isEdit ? t('role.editRole') : t('role.addRole')"
       width="480px"
       destroy-on-close
     >
       <el-form ref="formRef" :model="form" :rules="rules" label-width="90px">
-        <el-form-item label="名稱" prop="name">
-          <el-input v-model="form.name" placeholder="請輸入角色名稱" />
+        <el-form-item :label="t('role.name')" prop="name">
+          <el-input v-model="form.name" :placeholder="t('role.namePlaceholder')" />
         </el-form-item>
-        <el-form-item label="編碼" prop="code">
-          <el-input v-model="form.code" placeholder="請輸入角色編碼" />
+        <el-form-item :label="t('role.code')" prop="code">
+          <el-input v-model="form.code" :placeholder="t('role.codePlaceholder')" />
         </el-form-item>
-        <el-form-item label="排序" prop="sortNo">
+        <el-form-item :label="t('common.sortNo')" prop="sortNo">
           <el-input-number v-model="form.sortNo" :min="0" />
         </el-form-item>
-        <el-form-item label="狀態" prop="status">
+        <el-form-item :label="t('common.status')" prop="status">
           <el-switch v-model="form.status" :active-value="1" :inactive-value="0" />
         </el-form-item>
-        <el-form-item label="數據範圍">
+        <el-form-item :label="t('role.dataScope')">
           <el-select v-model="form.dataScope" class="w-full">
             <el-option
               v-for="opt in dataScopeOptions"
@@ -378,7 +381,7 @@ onMounted(() => {
             />
           </el-select>
         </el-form-item>
-        <el-form-item v-if="form.dataScope === 2" label="自訂部門">
+        <el-form-item v-if="form.dataScope === 2" :label="t('role.customDept')">
           <div class="menu-tree-box dept-tree-box">
             <el-tree
               ref="deptTreeRef"
@@ -390,17 +393,17 @@ onMounted(() => {
             />
           </div>
         </el-form-item>
-        <el-form-item label="備註" prop="remark">
-          <el-input v-model="form.remark" type="textarea" :rows="2" placeholder="請輸入備註" />
+        <el-form-item :label="t('common.remark')" prop="remark">
+          <el-input v-model="form.remark" type="textarea" :rows="2" :placeholder="t('role.remarkPlaceholder')" />
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="dialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="handleSubmit">確定</el-button>
+        <el-button @click="dialogVisible = false">{{ t('common.cancel') }}</el-button>
+        <el-button type="primary" @click="handleSubmit">{{ t('common.confirm') }}</el-button>
       </template>
     </el-dialog>
 
-    <el-dialog v-model="assignDialogVisible" title="分配菜單權限" width="480px" destroy-on-close>
+    <el-dialog v-model="assignDialogVisible" :title="t('role.assignMenus')" width="480px" destroy-on-close>
       <div v-loading="assignLoading" class="menu-tree-box">
         <el-tree
           ref="treeRef"
@@ -412,8 +415,8 @@ onMounted(() => {
         />
       </div>
       <template #footer>
-        <el-button @click="assignDialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="handleAssignSubmit">確定</el-button>
+        <el-button @click="assignDialogVisible = false">{{ t('common.cancel') }}</el-button>
+        <el-button type="primary" @click="handleAssignSubmit">{{ t('common.confirm') }}</el-button>
       </template>
     </el-dialog>
   </el-card>

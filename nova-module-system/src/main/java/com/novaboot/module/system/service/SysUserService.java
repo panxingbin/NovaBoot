@@ -2,6 +2,7 @@ package com.novaboot.module.system.service;
 
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.baomidou.mybatisplus.extension.toolkit.Db;
 import com.novaboot.common.core.domain.PageResult;
 import com.novaboot.common.exception.BusinessException;
 import com.novaboot.module.system.datascope.DataScope;
@@ -183,24 +184,26 @@ public class SysUserService {
         if (roleIds == null || roleIds.isEmpty()) {
             return;
         }
-        for (Long roleId : roleIds) {
+        List<SysUserRole> relations = roleIds.stream().map(roleId -> {
             SysUserRole userRole = new SysUserRole();
             userRole.setUserId(userId);
             userRole.setRoleId(roleId);
-            sysUserRoleMapper.insert(userRole);
-        }
+            return userRole;
+        }).toList();
+        Db.saveBatch(relations);
     }
 
     private void saveUserPosts(Long userId, List<Long> postIds) {
         if (postIds == null || postIds.isEmpty()) {
             return;
         }
-        for (Long postId : postIds) {
+        List<SysUserPost> relations = postIds.stream().map(postId -> {
             SysUserPost userPost = new SysUserPost();
             userPost.setUserId(userId);
             userPost.setPostId(postId);
-            sysUserPostMapper.insert(userPost);
-        }
+            return userPost;
+        }).toList();
+        Db.saveBatch(relations);
     }
 
     private UserVO toVO(SysUser user, List<Long> roleIds, List<Long> postIds) {

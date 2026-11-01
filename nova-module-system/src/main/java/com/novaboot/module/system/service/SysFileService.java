@@ -38,6 +38,10 @@ public class SysFileService {
     @Value("${nova.storage.local-path:./data/files}")
     private String localPath;
 
+    /** 拒絕上傳的擴展名（可執行/服務端腳本類）；逗號分隔，大小寫不敏感 */
+    @Value("${nova.storage.denied-extensions:jsp,jspx,jspf,war,sh,bash,bat,cmd,exe,dll,php,asp,aspx,ascx,cer,cdx,ashx,asmx,py,pl}")
+    private String deniedExtensions;
+
     @Transactional
     public FileVO upload(MultipartFile file) throws IOException {
         if (file == null || file.isEmpty()) {
@@ -45,10 +49,16 @@ public class SysFileService {
         }
         String originalName = StringUtils.cleanPath(
                 Objects.requireNonNullElse(file.getOriginalFilename(), "unnamed"));
+        if (originalName.contains("..")) {
+            throw new BusinessException("文件名不合法");
+        }
         String ext = "";
         int idx = originalName.lastIndexOf('.');
         if (idx >= 0) {
             ext = originalName.substring(idx);
+        }
+        if (isDeniedExtension(ext)) {
+            throw new BusinessException("不允許上傳 " + ext.substring(1).toUpperCase() + " 類型的文件");
         }
         String dateDir = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMM"));
         String name = UUID.randomUUID().toString().replace("-", "") + ext;
@@ -87,7 +97,26 @@ public class SysFileService {
     }
 
     public Path resolvePath(SysFileInfo info) {
-        return Paths.get(localPath).toAbsolutePath().resolve(info.getPath());
+        Path root = Paths.get(localPath).toAbsolutePath().normalize();
+        Path resolved = root.resolve(info.getPath()).normalize();
+        // 防禦路徑穿越：存儲路徑被污染時確保仍落在存儲根目錄內
+        if (!resolved.startsWith(root)) {
+            throw new BusinessException("非法的檔案存儲路徑");
+        }
+        return resolved;
+    }
+
+    private boolean isDeniedExtension(String ext) {
+        if (ext.length() < 2) {
+            return false;
+        }
+        String lower = ext.substring(1).toLowerCase();
+        for (String denied : deniedExtensions.split(",")) {
+            if (lower.equals(denied.trim().toLowerCase())) {
+                return true;
+            }
+        }
+        return false;
     }
 
     @Transactional

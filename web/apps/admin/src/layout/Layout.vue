@@ -3,27 +3,40 @@ import { computed, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessageBox } from 'element-plus'
 import { ArrowDown, Expand, Fold, SwitchButton, UserFilled } from '@element-plus/icons-vue'
+import { useI18n } from 'vue-i18n'
 import { useUserStore } from '@/stores/user'
+import { useTheme, type ThemeId } from '@/theme/useTheme'
+import LangSwitch from '@/components/LangSwitch.vue'
 import MenuItems from './MenuItems.vue'
 import { filterVisibleMenus } from '@/utils/menu'
 
 const route = useRoute()
 const router = useRouter()
 const userStore = useUserStore()
+const { t } = useI18n()
+const { theme, setTheme, themes } = useTheme()
 
 const isCollapse = ref(false)
 const visibleMenus = computed(() => filterVisibleMenus(userStore.menus))
 const activeMenu = computed(() => route.path)
-const displayName = computed(() => userStore.nickname || userStore.username || '用戶')
+const displayName = computed(() => userStore.nickname || userStore.username || t('layout.defaultUser'))
+const currentTheme = computed(() => themes.find((t) => t.id === theme.value) ?? themes[0])
+const pageTitle = computed(() => {
+  const titleKey = route.meta.titleKey as string | undefined
+  if (titleKey) {
+    return t(titleKey)
+  }
+  return (route.meta.title as string | undefined) ?? ''
+})
 
 async function handleCommand(command: string | number | object): Promise<void> {
   if (command !== 'logout') {
     return
   }
   try {
-    await ElMessageBox.confirm('確定要退出登錄嗎？', '提示', {
-      confirmButtonText: '確定',
-      cancelButtonText: '取消',
+    await ElMessageBox.confirm(t('layout.logoutConfirm'), t('common.tip'), {
+      confirmButtonText: t('common.confirm'),
+      cancelButtonText: t('common.cancel'),
       type: 'warning',
     })
   } catch {
@@ -31,6 +44,10 @@ async function handleCommand(command: string | number | object): Promise<void> {
   }
   await userStore.logout()
   router.replace('/login')
+}
+
+function handleThemeCommand(command: string | number | object): void {
+  setTheme(command as ThemeId)
 }
 </script>
 
@@ -61,20 +78,43 @@ async function handleCommand(command: string | number | object): Promise<void> {
             <Fold v-if="!isCollapse" />
             <Expand v-else />
           </el-icon>
-          <span class="page-title">{{ route.meta.title ?? '' }}</span>
+          <span class="page-title">{{ pageTitle }}</span>
         </div>
-        <el-dropdown trigger="click" @command="handleCommand">
-          <span class="user-entry">
-            <el-icon><UserFilled /></el-icon>
-            <span class="user-name">{{ displayName }}</span>
-            <el-icon><ArrowDown /></el-icon>
-          </span>
-          <template #dropdown>
-            <el-dropdown-menu>
-              <el-dropdown-item command="logout" :icon="SwitchButton">退出登錄</el-dropdown-item>
-            </el-dropdown-menu>
-          </template>
-        </el-dropdown>
+        <div class="header-right">
+          <LangSwitch />
+          <el-dropdown trigger="click" @command="handleThemeCommand">
+            <el-icon class="theme-btn" :size="18" :title="currentTheme.label">
+              <component :is="currentTheme.icon" />
+            </el-icon>
+            <template #dropdown>
+              <el-dropdown-menu>
+                <el-dropdown-item
+                  v-for="t in themes"
+                  :key="t.id"
+                  :command="t.id"
+                  :icon="t.icon"
+                  :class="{ 'is-current': t.id === theme }"
+                >
+                  {{ t.label }}
+                </el-dropdown-item>
+              </el-dropdown-menu>
+            </template>
+          </el-dropdown>
+          <el-dropdown trigger="click" @command="handleCommand">
+            <span class="user-entry">
+              <el-icon><UserFilled /></el-icon>
+              <span class="user-name">{{ displayName }}</span>
+              <el-icon><ArrowDown /></el-icon>
+            </span>
+            <template #dropdown>
+              <el-dropdown-menu>
+                <el-dropdown-item command="logout" :icon="SwitchButton">
+                  {{ t('layout.logout') }}
+                </el-dropdown-item>
+              </el-dropdown-menu>
+            </template>
+          </el-dropdown>
+        </div>
       </el-header>
       <el-main class="layout-main">
         <router-view />
@@ -92,7 +132,7 @@ async function handleCommand(command: string | number | object): Promise<void> {
   flex-direction: column;
   overflow: hidden;
   border-right: 1px solid var(--el-border-color-light);
-  background-color: #fff;
+  background-color: var(--el-bg-color);
   transition: width 0.2s;
 }
 .layout-logo {
@@ -119,7 +159,7 @@ async function handleCommand(command: string | number | object): Promise<void> {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: #fff;
+  background: var(--el-bg-color);
   border-bottom: 1px solid var(--el-border-color-light);
 }
 .header-left {
@@ -127,8 +167,21 @@ async function handleCommand(command: string | number | object): Promise<void> {
   align-items: center;
   gap: 12px;
 }
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
 .collapse-btn {
   cursor: pointer;
+}
+.theme-btn {
+  cursor: pointer;
+  color: var(--el-text-color-regular);
+  outline: none;
+}
+.theme-btn:hover {
+  color: var(--el-color-primary);
 }
 .page-title {
   font-size: 15px;
@@ -146,6 +199,6 @@ async function handleCommand(command: string | number | object): Promise<void> {
 }
 .layout-main {
   padding: 16px;
-  background-color: #f5f7fa;
+  background-color: var(--el-bg-color-page);
 }
 </style>

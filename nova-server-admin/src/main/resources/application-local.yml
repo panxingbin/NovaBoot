@@ -6,6 +6,9 @@ spring:
     password: ""
   flyway:
     locations: classpath:db/migration/h2
+  autoconfigure:
+    # local 保持零外部依賴：排除 Sa-Token 的 Redis DAO，回退框架默認的內存實現
+    exclude: cn.dev33.satoken.dao.SaTokenDaoForRedisTemplate
 
 logging:
   level:

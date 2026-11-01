@@ -53,9 +53,10 @@ public class SysFileController {
     }
 
     /**
-     * 下載（放在登入攔截白名單，支持 a 標籤直接下載）
+     * 下載：需登入且具備檔案列表權限；前端通過 axios blob 攜帶 Token 下載
      */
     @GetMapping("/download/{id}")
+    @SaCheckPermission("system:file:list")
     public ResponseEntity<Resource> download(@PathVariable Long id) throws IOException {
         SysFileInfo info = sysFileService.getEntity(id);
         Resource resource = new FileSystemResource(sysFileService.resolvePath(info));

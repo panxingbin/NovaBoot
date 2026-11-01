@@ -1,21 +1,28 @@
 package com.novaboot.module.system.service;
 
+import cn.dev33.satoken.stp.StpUtil;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.novaboot.common.exception.BusinessException;
+import com.novaboot.module.system.auth.AdminRoleChecker;
 import com.novaboot.module.system.dto.MenuBody;
 import com.novaboot.module.system.dto.MenuVO;
 import com.novaboot.module.system.entity.SysMenu;
 import com.novaboot.module.system.entity.SysRoleMenu;
+import com.novaboot.module.system.entity.SysUserRole;
+import com.novaboot.module.system.enums.MenuType;
 import com.novaboot.module.system.mapper.SysMenuMapper;
 import com.novaboot.module.system.mapper.SysRoleMenuMapper;
+import com.novaboot.module.system.mapper.SysUserRoleMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -27,16 +34,53 @@ public class SysMenuService {
 
     private final SysMenuMapper sysMenuMapper;
     private final SysRoleMenuMapper sysRoleMenuMapper;
+    private final SysUserRoleMapper sysUserRoleMapper;
+    private final AdminRoleChecker adminRoleChecker;
 
     /**
-     * 路由用選單樹（僅啟用的目錄與選單，不含按鈕）
+     * 路由用選單樹（僅啟用的目錄與選單，不含按鈕）。
+     * 按當前登入用戶的角色過濾：超級管理員可見全部，普通用戶僅可見被授權的選單；
+     * 若只授權了子選單而未授權父目錄，自動補全祖先鏈避免菜單懸空。
      */
     public List<MenuVO> tree() {
         List<SysMenu> menus = sysMenuMapper.selectList(Wrappers.<SysMenu>lambdaQuery()
                 .eq(SysMenu::getStatus, 1)
-                .ne(SysMenu::getMenuType, "B")
+                .ne(SysMenu::getMenuType, MenuType.BUTTON.getCode())
                 .orderByAsc(SysMenu::getSortNo));
-        return buildTree(menus);
+        List<SysMenu> visible = isAdmin() ? menus : filterByRoles(menus);
+        return buildTree(visible);
+    }
+
+    private boolean isAdmin() {
+        return adminRoleChecker.isAdminUser(StpUtil.getLoginIdAsLong());
+    }
+
+    /**
+     * 按角色選單授權過濾，並補全被授權節點的祖先目錄
+     */
+    private List<SysMenu> filterByRoles(List<SysMenu> all) {
+        List<Long> roleIds = sysUserRoleMapper.selectList(
+                        Wrappers.<SysUserRole>lambdaQuery().eq(SysUserRole::getUserId, StpUtil.getLoginIdAsLong()))
+                .stream().map(SysUserRole::getRoleId).toList();
+        if (roleIds.isEmpty()) {
+            return List.of();
+        }
+        Set<Long> boundMenuIds = sysRoleMenuMapper.selectList(
+                        Wrappers.<SysRoleMenu>lambdaQuery().in(SysRoleMenu::getRoleId, roleIds))
+                .stream().map(SysRoleMenu::getMenuId).collect(Collectors.toSet());
+        if (boundMenuIds.isEmpty()) {
+            return List.of();
+        }
+        Map<Long, SysMenu> byId = all.stream()
+                .collect(Collectors.toMap(SysMenu::getId, m -> m));
+        Set<Long> visibleIds = new HashSet<>();
+        for (Long menuId : boundMenuIds) {
+            SysMenu cur = byId.get(menuId);
+            while (cur != null && visibleIds.add(cur.getId())) {
+                cur = byId.get(cur.getParentId());
+            }
+        }
+        return all.stream().filter(m -> visibleIds.contains(m.getId())).toList();
     }
 
     /**

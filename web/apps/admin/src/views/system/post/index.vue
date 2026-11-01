@@ -3,9 +3,12 @@ import { onMounted, reactive, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
 import { Plus, Refresh, Search } from '@element-plus/icons-vue'
+import { useI18n } from 'vue-i18n'
 import { createPost, deletePost, pagePosts, updatePost } from '@/api/system'
 import type { PostVO } from '@/api/types'
 import { formatDateTime } from '@/utils/format'
+
+const { t } = useI18n()
 
 const loading = ref(false)
 const total = ref(0)
@@ -59,8 +62,8 @@ const form = reactive({
 })
 
 const rules: FormRules = {
-  code: [{ required: true, message: '請輸入崗位編碼', trigger: 'blur' }],
-  name: [{ required: true, message: '請輸入崗位名稱', trigger: 'blur' }],
+  code: [{ required: true, message: () => t('post.codeRequired'), trigger: 'blur' }],
+  name: [{ required: true, message: () => t('post.nameRequired'), trigger: 'blur' }],
 }
 
 function openCreate(): void {
@@ -98,10 +101,10 @@ async function handleSubmit(): Promise<void> {
   }
   if (isEdit.value) {
     await updatePost(editingId.value, payload)
-    ElMessage.success('修改成功')
+    ElMessage.success(t('common.saveSuccess'))
   } else {
     await createPost(payload)
-    ElMessage.success('新增成功')
+    ElMessage.success(t('common.saveSuccess'))
   }
   dialogVisible.value = false
   void fetchList()
@@ -111,16 +114,16 @@ async function handleSubmit(): Promise<void> {
 
 async function handleDelete(row: PostVO): Promise<void> {
   try {
-    await ElMessageBox.confirm(`確定要刪除崗位「${row.name}」嗎？`, '警告', {
-      confirmButtonText: '確定',
-      cancelButtonText: '取消',
+    await ElMessageBox.confirm(t('post.deleteConfirm', { name: row.name }), t('common.warning'), {
+      confirmButtonText: t('common.confirm'),
+      cancelButtonText: t('common.cancel'),
       type: 'warning',
     })
   } catch {
     return
   }
   await deletePost(row.id)
-  ElMessage.success('刪除成功')
+  ElMessage.success(t('common.deleteSuccess'))
   if (records.value.length === 1 && query.pageNum > 1) {
     query.pageNum -= 1
   }
@@ -138,42 +141,42 @@ onMounted(() => {
       <el-input
         v-model="query.keyword"
         class="search-input"
-        placeholder="崗位名稱 / 編碼"
+        :placeholder="t('post.searchPlaceholder')"
         clearable
         @keyup.enter="handleSearch"
         @clear="handleSearch"
       />
-      <el-button type="primary" :icon="Search" @click="handleSearch">搜索</el-button>
-      <el-button :icon="Refresh" @click="handleReset">重置</el-button>
+      <el-button type="primary" :icon="Search" @click="handleSearch">{{ t('common.search') }}</el-button>
+      <el-button :icon="Refresh" @click="handleReset">{{ t('common.reset') }}</el-button>
       <el-button v-permission="'system:post:add'" type="primary" :icon="Plus" @click="openCreate">
-        新增崗位
+        {{ t('post.addPost') }}
       </el-button>
     </div>
 
     <el-table v-loading="loading" :data="records" stripe>
-      <el-table-column prop="code" label="編碼" min-width="120" />
-      <el-table-column prop="name" label="名稱" min-width="140" />
-      <el-table-column prop="sortNo" label="排序" width="70" />
-      <el-table-column label="狀態" width="90" align="center">
+      <el-table-column prop="code" :label="t('post.code')" min-width="120" />
+      <el-table-column prop="name" :label="t('post.name')" min-width="140" />
+      <el-table-column prop="sortNo" :label="t('common.sortNo')" width="70" />
+      <el-table-column :label="t('common.status')" width="90" align="center">
         <template #default="{ row }">
           <el-tag :type="row.status === 1 ? 'success' : 'danger'">
-            {{ row.status === 1 ? '正常' : '停用' }}
+            {{ row.status === 1 ? t('post.statusNormal') : t('common.disabled') }}
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column label="備註" min-width="140">
+      <el-table-column :label="t('common.remark')" min-width="140">
         <template #default="{ row }">{{ row.remark || '-' }}</template>
       </el-table-column>
-      <el-table-column label="創建時間" width="170">
+      <el-table-column :label="t('common.createdAt')" width="170">
         <template #default="{ row }">{{ formatDateTime(row.createdAt) }}</template>
       </el-table-column>
-      <el-table-column label="操作" width="150" fixed="right">
+      <el-table-column :label="t('common.operation')" width="150" fixed="right">
         <template #default="{ row }">
           <el-button v-permission="'system:post:edit'" link type="primary" @click="openEdit(row as PostVO)">
-            修改
+            {{ t('common.edit') }}
           </el-button>
           <el-button v-permission="'system:post:delete'" link type="danger" @click="handleDelete(row as PostVO)">
-            刪除
+            {{ t('common.delete') }}
           </el-button>
         </template>
       </el-table-column>
@@ -193,30 +196,30 @@ onMounted(() => {
 
     <el-dialog
       v-model="dialogVisible"
-      :title="isEdit ? '修改崗位' : '新增崗位'"
+      :title="isEdit ? t('post.editPost') : t('post.addPost')"
       width="480px"
       destroy-on-close
     >
       <el-form ref="formRef" :model="form" :rules="rules" label-width="90px">
-        <el-form-item label="編碼" prop="code">
-          <el-input v-model="form.code" placeholder="請輸入崗位編碼" />
+        <el-form-item :label="t('post.code')" prop="code">
+          <el-input v-model="form.code" :placeholder="t('post.codeRequired')" />
         </el-form-item>
-        <el-form-item label="名稱" prop="name">
-          <el-input v-model="form.name" placeholder="請輸入崗位名稱" />
+        <el-form-item :label="t('post.name')" prop="name">
+          <el-input v-model="form.name" :placeholder="t('post.nameRequired')" />
         </el-form-item>
-        <el-form-item label="排序" prop="sortNo">
+        <el-form-item :label="t('common.sortNo')" prop="sortNo">
           <el-input-number v-model="form.sortNo" :min="0" />
         </el-form-item>
-        <el-form-item label="狀態" prop="status">
+        <el-form-item :label="t('common.status')" prop="status">
           <el-switch v-model="form.status" :active-value="1" :inactive-value="0" />
         </el-form-item>
-        <el-form-item label="備註" prop="remark">
-          <el-input v-model="form.remark" type="textarea" :rows="2" placeholder="請輸入備註" />
+        <el-form-item :label="t('common.remark')" prop="remark">
+          <el-input v-model="form.remark" type="textarea" :rows="2" :placeholder="t('post.remarkPlaceholder')" />
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="dialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="handleSubmit">確定</el-button>
+        <el-button @click="dialogVisible = false">{{ t('common.cancel') }}</el-button>
+        <el-button type="primary" @click="handleSubmit">{{ t('common.confirm') }}</el-button>
       </template>
     </el-dialog>
   </el-card>

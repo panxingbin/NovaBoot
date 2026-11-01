@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { useI18n } from 'vue-i18n'
 import { Plus, Refresh, Search } from '@element-plus/icons-vue'
 import { createMenu, deleteMenu, listMenus, updateMenu } from '@/api/system'
 import type { MenuSaveBody } from '@/api/system'
@@ -8,17 +9,19 @@ import type { MenuType, MenuVO } from '@/api/types'
 import { buildTree } from '@/utils/menu'
 import { getIcon } from '@/utils/icons'
 
+const { t } = useI18n()
+
 const loading = ref(false)
 const flatList = ref<MenuVO[]>([])
 const keyword = ref('')
 
 const menuTree = computed(() => buildTree(flatList.value))
 
-const menuTypeMeta: Record<MenuType, { label: string; tag: 'primary' | 'success' | 'info' }> = {
-  D: { label: '目錄', tag: 'primary' },
-  M: { label: '菜單', tag: 'success' },
-  B: { label: '按鈕', tag: 'info' },
-}
+const menuTypeMeta = computed<Record<MenuType, { label: string; tag: 'primary' | 'success' | 'info' }>>(() => ({
+  D: { label: t('menu.typeDir'), tag: 'primary' },
+  M: { label: t('menu.typeMenu'), tag: 'success' },
+  B: { label: t('menu.typeButton'), tag: 'info' },
+}))
 
 async function fetchList(): Promise<void> {
   loading.value = true
@@ -62,7 +65,7 @@ const parentOptions = computed(() => [
   {
     id: 0,
     parentId: -1,
-    name: '根菜單',
+    name: t('menu.rootMenu'),
     menuType: 'D' as MenuType,
     path: '',
     component: '',
@@ -113,19 +116,19 @@ function openEdit(row: MenuVO): void {
 
 async function handleSubmit(): Promise<void> {
   if (!form.name.trim()) {
-    ElMessage.warning('請輸入菜單名稱')
+    ElMessage.warning(t('menu.nameRequired'))
     return
   }
   if (form.menuType !== 'B' && !form.path.trim()) {
-    ElMessage.warning('請輸入路由地址')
+    ElMessage.warning(t('menu.pathRequired'))
     return
   }
   if (form.menuType === 'M' && !form.component.trim()) {
-    ElMessage.warning('請輸入組件路徑')
+    ElMessage.warning(t('menu.componentRequired'))
     return
   }
   if (form.menuType === 'B' && !form.perm.trim()) {
-    ElMessage.warning('請輸入權限標識')
+    ElMessage.warning(t('menu.permRequired'))
     return
   }
   const body: MenuSaveBody = {
@@ -142,10 +145,10 @@ async function handleSubmit(): Promise<void> {
   }
   if (isEdit.value) {
     await updateMenu(form.id, body)
-    ElMessage.success('修改成功')
+    ElMessage.success(t('menu.updateSuccess'))
   } else {
     await createMenu(body)
-    ElMessage.success('新增成功')
+    ElMessage.success(t('menu.createSuccess'))
   }
   dialogVisible.value = false
   void fetchList()
@@ -153,16 +156,16 @@ async function handleSubmit(): Promise<void> {
 
 async function handleDelete(row: MenuVO): Promise<void> {
   try {
-    await ElMessageBox.confirm(`確定要刪除菜單「${row.name}」嗎？`, '警告', {
-      confirmButtonText: '確定',
-      cancelButtonText: '取消',
+    await ElMessageBox.confirm(t('menu.deleteConfirm', { name: row.name }), t('common.warning'), {
+      confirmButtonText: t('common.confirm'),
+      cancelButtonText: t('common.cancel'),
       type: 'warning',
     })
   } catch {
     return
   }
   await deleteMenu(row.id)
-  ElMessage.success('刪除成功')
+  ElMessage.success(t('common.deleteSuccess'))
   void fetchList()
 }
 
@@ -177,15 +180,15 @@ onMounted(() => {
       <el-input
         v-model="keyword"
         class="search-input"
-        placeholder="菜單名稱 / 權限標識"
+        :placeholder="t('menu.searchPlaceholder')"
         clearable
         @keyup.enter="handleSearch"
         @clear="handleReset"
       />
-      <el-button type="primary" :icon="Search" @click="handleSearch">搜索</el-button>
-      <el-button :icon="Refresh" @click="handleReset">重置</el-button>
+      <el-button type="primary" :icon="Search" @click="handleSearch">{{ t('common.search') }}</el-button>
+      <el-button :icon="Refresh" @click="handleReset">{{ t('common.reset') }}</el-button>
       <el-button v-permission="'system:menu:add'" type="primary" :icon="Plus" @click="openCreate()">
-        新增菜單
+        {{ t('menu.addMenu') }}
       </el-button>
     </div>
 
@@ -196,39 +199,39 @@ onMounted(() => {
       default-expand-all
       :tree-props="{ children: 'children' }"
     >
-      <el-table-column label="名稱" min-width="180">
+      <el-table-column :label="t('menu.name')" min-width="180">
         <template #default="{ row }">
           <el-icon v-if="row.icon" class="menu-icon"><component :is="getIcon(row.icon)" /></el-icon>
           <span>{{ row.name }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="類型" width="80" align="center">
+      <el-table-column :label="t('menu.type')" width="80" align="center">
         <template #default="{ row }">
           <el-tag :type="menuTypeMeta[row.menuType as MenuType].tag">
             {{ menuTypeMeta[row.menuType as MenuType].label }}
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column prop="path" label="路由地址" min-width="140" />
-      <el-table-column prop="component" label="組件路徑" min-width="180" />
-      <el-table-column prop="perm" label="權限標識" min-width="160" />
-      <el-table-column prop="sortNo" label="排序" width="70" align="center" />
-      <el-table-column label="可見" width="80" align="center">
+      <el-table-column prop="path" :label="t('menu.path')" min-width="140" />
+      <el-table-column prop="component" :label="t('menu.component')" min-width="180" />
+      <el-table-column prop="perm" :label="t('menu.perm')" min-width="160" />
+      <el-table-column prop="sortNo" :label="t('common.sortNo')" width="70" align="center" />
+      <el-table-column :label="t('menu.visible')" width="80" align="center">
         <template #default="{ row }">
           <el-tag v-if="row.menuType !== 'B'" :type="row.visible === 0 ? 'info' : 'success'">
-            {{ row.visible === 0 ? '隱藏' : '顯示' }}
+            {{ row.visible === 0 ? t('menu.hidden') : t('menu.shown') }}
           </el-tag>
           <span v-else>-</span>
         </template>
       </el-table-column>
-      <el-table-column label="狀態" width="80" align="center">
+      <el-table-column :label="t('common.status')" width="80" align="center">
         <template #default="{ row }">
           <el-tag :type="row.status === 1 ? 'success' : 'danger'">
-            {{ row.status === 1 ? '正常' : '停用' }}
+            {{ row.status === 1 ? t('menu.normal') : t('common.disabled') }}
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column label="操作" width="220" fixed="right">
+      <el-table-column :label="t('common.operation')" width="220" fixed="right">
         <template #default="{ row }">
           <el-button
             v-if="row.menuType !== 'B'"
@@ -237,10 +240,10 @@ onMounted(() => {
             type="primary"
             @click="openCreate(row as MenuVO)"
           >
-            新增子項
+            {{ t('menu.addChild') }}
           </el-button>
           <el-button v-permission="'system:menu:edit'" link type="primary" @click="openEdit(row as MenuVO)">
-            修改
+            {{ t('common.edit') }}
           </el-button>
           <el-button
             v-permission="'system:menu:delete'"
@@ -248,7 +251,7 @@ onMounted(() => {
             type="danger"
             @click="handleDelete(row as MenuVO)"
           >
-            刪除
+            {{ t('common.delete') }}
           </el-button>
         </template>
       </el-table-column>
@@ -256,12 +259,12 @@ onMounted(() => {
 
     <el-dialog
       v-model="dialogVisible"
-      :title="isEdit ? '修改菜單' : '新增菜單'"
+      :title="isEdit ? t('menu.editMenu') : t('menu.addMenu')"
       width="560px"
       destroy-on-close
     >
       <el-form label-width="90px">
-        <el-form-item label="上級菜單">
+        <el-form-item :label="t('menu.parentMenu')">
           <el-tree-select
             v-model="form.parentId"
             class="w-full"
@@ -273,58 +276,58 @@ onMounted(() => {
             :render-after-expand="false"
           />
         </el-form-item>
-        <el-form-item label="菜單類型">
+        <el-form-item :label="t('menu.menuType')">
           <el-radio-group v-model="form.menuType">
-            <el-radio-button value="D">目錄</el-radio-button>
-            <el-radio-button value="M">菜單</el-radio-button>
-            <el-radio-button value="B">按鈕</el-radio-button>
+            <el-radio-button value="D">{{ t('menu.typeDir') }}</el-radio-button>
+            <el-radio-button value="M">{{ t('menu.typeMenu') }}</el-radio-button>
+            <el-radio-button value="B">{{ t('menu.typeButton') }}</el-radio-button>
           </el-radio-group>
         </el-form-item>
-        <el-form-item label="名稱" required>
-          <el-input v-model="form.name" placeholder="請輸入菜單名稱" />
+        <el-form-item :label="t('menu.name')" required>
+          <el-input v-model="form.name" :placeholder="t('menu.namePlaceholder')" />
         </el-form-item>
-        <el-form-item v-if="form.menuType !== 'B'" label="路由地址" required>
-          <el-input v-model="form.path" placeholder="如 /system 或 /system/user" />
+        <el-form-item v-if="form.menuType !== 'B'" :label="t('menu.path')" required>
+          <el-input v-model="form.path" :placeholder="t('menu.pathPlaceholder')" />
         </el-form-item>
-        <el-form-item v-if="form.menuType === 'M'" label="組件路徑" required>
-          <el-input v-model="form.component" placeholder="如 system/user/index" />
+        <el-form-item v-if="form.menuType === 'M'" :label="t('menu.component')" required>
+          <el-input v-model="form.component" :placeholder="t('menu.componentPlaceholder')" />
         </el-form-item>
-        <el-form-item v-if="form.menuType !== 'D'" label="權限標識">
-          <el-input v-model="form.perm" placeholder="如 system:user:add" />
+        <el-form-item v-if="form.menuType !== 'D'" :label="t('menu.perm')">
+          <el-input v-model="form.perm" :placeholder="t('menu.permPlaceholder')" />
         </el-form-item>
-        <el-form-item v-if="form.menuType !== 'B'" label="圖標">
+        <el-form-item v-if="form.menuType !== 'B'" :label="t('menu.icon')">
           <div class="icon-row">
-            <el-input v-model="form.icon" placeholder="Element Plus 圖標名，如 Setting" />
+            <el-input v-model="form.icon" :placeholder="t('menu.iconPlaceholder')" />
             <el-icon v-if="form.icon" class="icon-preview">
               <component :is="getIcon(form.icon)" />
             </el-icon>
           </div>
         </el-form-item>
-        <el-form-item label="排序">
+        <el-form-item :label="t('common.sortNo')">
           <el-input-number v-model="form.sortNo" :min="0" />
         </el-form-item>
-        <el-form-item v-if="form.menuType !== 'B'" label="可見">
+        <el-form-item v-if="form.menuType !== 'B'" :label="t('menu.visible')">
           <el-switch
             v-model="form.visible"
             :active-value="1"
             :inactive-value="0"
-            active-text="顯示"
-            inactive-text="隱藏"
+            :active-text="t('menu.shown')"
+            :inactive-text="t('menu.hidden')"
           />
         </el-form-item>
-        <el-form-item label="狀態">
+        <el-form-item :label="t('common.status')">
           <el-switch
             v-model="form.status"
             :active-value="1"
             :inactive-value="0"
-            active-text="正常"
-            inactive-text="停用"
+            :active-text="t('menu.normal')"
+            :inactive-text="t('common.disabled')"
           />
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="dialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="handleSubmit">確定</el-button>
+        <el-button @click="dialogVisible = false">{{ t('common.cancel') }}</el-button>
+        <el-button type="primary" @click="handleSubmit">{{ t('common.confirm') }}</el-button>
       </template>
     </el-dialog>
   </el-card>

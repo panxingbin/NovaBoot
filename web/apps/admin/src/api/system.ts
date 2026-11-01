@@ -1,4 +1,4 @@
-import { del, get, post, put } from './http'
+import { del, download, get, post, put } from './http'
 import type {
   ConfigVO,
   DeptVO,
@@ -352,8 +352,8 @@ export function pageFiles(params: {
   return get<PageResult<FileVO>>('/api/system/files', { ...params })
 }
 
-export function fileDownloadUrl(id: number): string {
-  return `/api/system/files/download/${id}`
+export function downloadFile(id: number, originalName: string): Promise<void> {
+  return download(`/api/system/files/download/${id}`, originalName)
 }
 
 export function deleteFile(id: number): Promise<null> {

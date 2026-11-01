@@ -17,11 +17,16 @@ node_modules/
 dist/
 *.local
 pnpm-debug.log*
+.pnpm-store/
 
 # 工具與臨時
 .tools/
 .tmp/
+.m2repo/
 *.log
+
+# 本地環境配置（含連接信息，不入庫）
+application-mysql.yml
 
 # OS
 .DS_Store

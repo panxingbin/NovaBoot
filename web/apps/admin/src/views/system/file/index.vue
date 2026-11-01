@@ -1,10 +1,13 @@
 <script setup lang="ts">
 import { onMounted, reactive, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Refresh, Search, Upload } from '@element-plus/icons-vue'
-import { deleteFile, fileDownloadUrl, pageFiles, uploadFile } from '@/api/system'
+import { deleteFile, downloadFile, pageFiles, uploadFile } from '@/api/system'
 import type { FileVO } from '@/api/types'
 import { formatDateTime, formatFileSize } from '@/utils/format'
+
+const { t } = useI18n()
 
 const loading = ref(false)
 const uploading = ref(false)
@@ -49,25 +52,37 @@ async function handleUpload(options: { file: File }): Promise<void> {
     const formData = new FormData()
     formData.append('file', options.file)
     await uploadFile(formData)
-    ElMessage.success('上傳成功')
+    ElMessage.success(t('file.uploadSuccess'))
     void fetchList()
   } finally {
     uploading.value = false
   }
 }
 
+async function handleDownload(row: FileVO): Promise<void> {
+  try {
+    await downloadFile(row.id, row.originalName)
+  } catch (error) {
+    ElMessage.error(error instanceof Error ? error.message : t('file.downloadFailed'))
+  }
+}
+
 async function handleDelete(row: FileVO): Promise<void> {
   try {
-    await ElMessageBox.confirm(`確定要刪除檔案「${row.originalName}」嗎？`, '警告', {
-      confirmButtonText: '確定',
-      cancelButtonText: '取消',
-      type: 'warning',
-    })
+    await ElMessageBox.confirm(
+      t('file.deleteConfirm', { name: row.originalName }),
+      t('common.warning'),
+      {
+        confirmButtonText: t('common.confirm'),
+        cancelButtonText: t('common.cancel'),
+        type: 'warning',
+      },
+    )
   } catch {
     return
   }
   await deleteFile(row.id)
-  ElMessage.success('刪除成功')
+  ElMessage.success(t('common.deleteSuccess'))
   if (records.value.length === 1 && query.pageNum > 1) {
     query.pageNum -= 1
   }
@@ -85,13 +100,15 @@ onMounted(() => {
       <el-input
         v-model="query.keyword"
         class="search-input"
-        placeholder="文件名"
+        :placeholder="t('file.searchPlaceholder')"
         clearable
         @keyup.enter="handleSearch"
         @clear="handleSearch"
       />
-      <el-button type="primary" :icon="Search" @click="handleSearch">搜索</el-button>
-      <el-button :icon="Refresh" @click="handleReset">重置</el-button>
+      <el-button type="primary" :icon="Search" @click="handleSearch">
+        {{ t('common.search') }}
+      </el-button>
+      <el-button :icon="Refresh" @click="handleReset">{{ t('common.reset') }}</el-button>
       <el-upload
         class="uploader"
         :show-file-list="false"
@@ -99,32 +116,31 @@ onMounted(() => {
         :http-request="handleUpload"
       >
         <el-button v-permission="'system:file:upload'" type="success" :icon="Upload" :loading="uploading">
-          上傳檔案
+          {{ t('file.upload') }}
         </el-button>
       </el-upload>
     </div>
 
     <el-table v-loading="loading" :data="records" stripe>
-      <el-table-column prop="originalName" label="原文件名" min-width="200" show-overflow-tooltip />
-      <el-table-column label="大小" width="110">
+      <el-table-column prop="originalName" :label="t('file.originalName')" min-width="200" show-overflow-tooltip />
+      <el-table-column :label="t('file.size')" width="110">
         <template #default="{ row }">{{ formatFileSize(row.size) }}</template>
       </el-table-column>
-      <el-table-column label="類型" min-width="140">
+      <el-table-column :label="t('file.contentType')" min-width="140">
         <template #default="{ row }">{{ row.contentType || '-' }}</template>
       </el-table-column>
-      <el-table-column label="上傳時間" width="170">
+      <el-table-column :label="t('file.uploadTime')" width="170">
         <template #default="{ row }">{{ formatDateTime(row.createdAt) }}</template>
       </el-table-column>
-      <el-table-column label="操作" width="140" fixed="right">
+      <el-table-column :label="t('common.operation')" width="140" fixed="right">
         <template #default="{ row }">
           <el-link
             type="primary"
-            :href="fileDownloadUrl(row.id)"
-            target="_blank"
             :underline="false"
             class="download-link"
+            @click="handleDownload(row as FileVO)"
           >
-            下載
+            {{ t('file.download') }}
           </el-link>
           <el-button
             v-permission="'system:file:delete'"
@@ -132,7 +148,7 @@ onMounted(() => {
             type="danger"
             @click="handleDelete(row as FileVO)"
           >
-            刪除
+            {{ t('common.delete') }}
           </el-button>
         </template>
       </el-table-column>

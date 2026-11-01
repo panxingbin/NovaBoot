@@ -2,14 +2,19 @@
 import { onMounted, reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import type { FormInstance, FormRules } from 'element-plus'
+import type { FormInstance } from 'element-plus'
+import { useI18n } from 'vue-i18n'
 import { Key, Lock, User } from '@element-plus/icons-vue'
 import { getCaptcha, login } from '@/api/auth'
 import { useUserStore } from '@/stores/user'
+import { useTheme, type ThemeId } from '@/theme/useTheme'
+import LangSwitch from '@/components/LangSwitch.vue'
 
 const route = useRoute()
 const router = useRouter()
 const userStore = useUserStore()
+const { t } = useI18n()
+const { theme, setTheme, themes } = useTheme()
 
 const formRef = ref<FormInstance>()
 const loading = ref(false)
@@ -21,10 +26,10 @@ const form = reactive({
   captchaCode: '',
 })
 
-const rules: FormRules = {
-  username: [{ required: true, message: '請輸入用戶名', trigger: 'blur' }],
-  password: [{ required: true, message: '請輸入密碼', trigger: 'blur' }],
-  captchaCode: [{ required: true, message: '請輸入驗證碼', trigger: 'blur' }],
+const rules = {
+  username: [{ required: true, message: () => t('login.usernameRequired'), trigger: 'blur' }],
+  password: [{ required: true, message: () => t('login.passwordRequired'), trigger: 'blur' }],
+  captchaCode: [{ required: true, message: () => t('login.captchaRequired'), trigger: 'blur' }],
 }
 
 async function refreshCaptcha(): Promise<void> {
@@ -39,6 +44,10 @@ async function refreshCaptcha(): Promise<void> {
 onMounted(() => {
   void refreshCaptcha()
 })
+
+function handleThemeCommand(command: string | number | object): void {
+  setTheme(command as ThemeId)
+}
 
 async function handleLogin(): Promise<void> {
   try {
@@ -59,7 +68,7 @@ async function handleLogin(): Promise<void> {
     const redirect = typeof route.query.redirect === 'string' ? route.query.redirect : '/'
     const target = redirect.startsWith('/') && !redirect.startsWith('//') ? redirect : '/'
     await router.replace(target)
-    ElMessage.success('登入成功')
+    ElMessage.success(t('login.success'))
   } catch {
     await refreshCaptcha()
   } finally {
@@ -70,14 +79,35 @@ async function handleLogin(): Promise<void> {
 
 <template>
   <div class="login-page">
+    <div class="login-tools">
+      <LangSwitch />
+      <el-dropdown trigger="click" @command="handleThemeCommand">
+        <el-icon class="theme-btn" :size="20" title="Theme">
+          <component :is="themes.find((item) => item.id === theme)?.icon" />
+        </el-icon>
+        <template #dropdown>
+          <el-dropdown-menu>
+            <el-dropdown-item
+              v-for="item in themes"
+              :key="item.id"
+              :command="item.id"
+              :icon="item.icon"
+              :class="{ 'is-current': item.id === theme }"
+            >
+              {{ item.label }}
+            </el-dropdown-item>
+          </el-dropdown-menu>
+        </template>
+      </el-dropdown>
+    </div>
     <el-card class="login-card" shadow="always">
-      <div class="login-title">NovaBoot 管理後台</div>
-      <div class="login-subtitle">開源後台框架 · M0</div>
+      <div class="login-title">NovaBoot {{ t('login.title') }}</div>
+      <div class="login-subtitle">{{ t('login.subtitle') }}</div>
       <el-form ref="formRef" :model="form" :rules="rules" size="large" @keyup.enter="handleLogin">
         <el-form-item prop="username">
           <el-input
             v-model="form.username"
-            placeholder="用戶名"
+            :placeholder="t('login.username')"
             :prefix-icon="User"
             autocomplete="username"
           />
@@ -87,7 +117,7 @@ async function handleLogin(): Promise<void> {
             v-model="form.password"
             type="password"
             show-password
-            placeholder="密碼"
+            :placeholder="t('login.password')"
             :prefix-icon="Lock"
             autocomplete="current-password"
           />
@@ -97,22 +127,22 @@ async function handleLogin(): Promise<void> {
             <el-input
               v-model="form.captchaCode"
               class="captcha-input"
-              placeholder="驗證碼"
+              :placeholder="t('login.captcha')"
               :prefix-icon="Key"
             />
             <img
               v-if="captchaInfo.imageBase64"
               class="captcha-img"
               :src="captchaInfo.imageBase64"
-              alt="驗證碼"
-              title="點擊刷新驗證碼"
+              alt="captcha"
+              title="captcha"
               @click="refreshCaptcha"
             />
           </div>
         </el-form-item>
         <el-form-item>
           <el-button class="login-btn" type="primary" :loading="loading" @click="handleLogin">
-            登 入
+            {{ t('login.loginBtn') }}
           </el-button>
         </el-form-item>
       </el-form>
@@ -122,24 +152,41 @@ async function handleLogin(): Promise<void> {
 
 <style scoped>
 .login-page {
+  position: relative;
   display: flex;
   height: 100%;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #dbeafe 0%, #ede9fe 100%);
+  background: var(--nova-login-bg);
+}
+.login-tools {
+  position: absolute;
+  top: 20px;
+  right: 24px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.theme-btn {
+  color: var(--el-text-color-regular);
+  cursor: pointer;
+  outline: none;
+}
+.theme-btn:hover {
+  color: var(--el-color-primary);
 }
 .login-card {
   width: 400px;
 }
 .login-title {
-  color: #1f2937;
+  color: var(--el-text-color-primary);
   font-size: 22px;
   font-weight: 700;
   text-align: center;
 }
 .login-subtitle {
   margin: 4px 0 20px;
-  color: #9ca3af;
+  color: var(--el-text-color-secondary);
   font-size: 13px;
   text-align: center;
 }
@@ -155,7 +202,7 @@ async function handleLogin(): Promise<void> {
 .captcha-img {
   height: 40px;
   cursor: pointer;
-  border: 1px solid #dcdfe6;
+  border: 1px solid var(--el-border-color);
   border-radius: 4px;
 }
 .login-btn {
